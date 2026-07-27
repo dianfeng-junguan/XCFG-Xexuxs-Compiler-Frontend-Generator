@@ -12,8 +12,8 @@ return:\breturn\b
 include:\binclude\b
 #TYPEKW
 int:\bint\b
-string:\bstring\b
-char:\bchar\b
+string_typekw:\bstring\b
+char_typekw:\bchar\b
 void:\bvoid\b
 struct:\bstruct\b
 #NUMBER
@@ -97,17 +97,18 @@ whitespace:\s+
 
 # Parser
 
-The `$xxx` is called "node". The struct definitions of nodes are generated. For each node, a struct is defined and its members are taken from the names after the `@`. The thing before the `@` is called "scanned" here. The member type is inferred by rules below:
+The `$xxx` is called "node". The class definitions of rules are generated. For each rule, a class is defined and its members are taken from the names after the `@`. The thing before the `@` is called "scanned" here. The member type is inferred by rules below:
 
 ```
 if scanned is specific token or token category
     member type is the same as the type of token.value
 elseif scanned is a category
-    member type is a pointer to the structs in categories
+    member type is a pointer to the node class
 end
 ```
 
-For every node struct, its members are sum of names occurred in all its generation rules. Some members might have multiple types inferred from different rules and they are defined as unions, the name of which is the name collected from rules and its inner member names are set as the rule name. 
+A Node is defined as a class that other rule classes inherit from. The class has a method like `get_type()` and it returns the rule class type, since it is needed to get the exact type after getting the class from the parent node and we only know the node type from the pointer rather than the rule type.
+
 
 Rules:
 ```pwsh
@@ -203,10 +204,37 @@ default:fn identifier openparen $arglist@args closedparen $func_returntype@retur
 
 # Sematic
 
+1. Create symbol tables
+2. grammar checking
+
+## Symbol table
+
+If a symbol is defined or declared, it is available in all the scope it is in, both before or after the definition or declaration. 
+
+## Grammar rules
+
+Allowed type conversion:
+
+```
+string <=> int
+char <=> int
+pointer <=> int
+pointer <=> string
+array <=> pointer
+```
+
 
 
 # IR
 
+You might want to do something to the AST tree to make it easier to generate assembly from it. IR is something you create after you do some conversion to the AST tree.
+
+Definitions are extracted and those in a same scope are collected into a single block called `allocsyms` to be put at the beginning of the scope where all symbols in this scope are allocated at once. Specific size of symbols is not got involved yet but such re-ordering makes it easier to generate assembly thereafter. And `freesyms` is also inserted to mark the end of symbol lifetime.
+
 ```
 
 ```
+
+# Assembly
+
+Here we visit the IR tree at depth-first order. For expression, temporary var is needed and a table is maintained to record used temp vars. For example, a expr node with operator=add will visit its leaves first and generate code of leaves so that values of leaves are ready when needed. The values of leaves are stored in temp vars.
