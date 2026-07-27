@@ -17,14 +17,14 @@ char_typekw:\bchar\b
 void:\bvoid\b
 struct:\bstruct\b
 #NUMBER
-number:(0x[0-9a-fA-F]+)|([0-9a-fA-F]+h)|(0b[01]+)|(0o[1-7]+)|([01]+b)|([0-9]+)
-float:[0-9]+.[0-9]+
+number:(0x[0_9a_fA_F]+)|([0_9a_fA_F]+h)|(0b[01]+)|(0o[1_7]+)|([01]+b)|([0_9]+)
+float:[0_9]+.[0_9]+
 #STRING
 string:\"[^\"]*\"
 #CHAR
 char:\'\\?[^\']?\'
 #IDENTIFIER
-identifier:[a-zA-Z_][a-zA-Z_0-9]*
+identifier:[a_zA_Z_][a_zA_Z_0_9]*
 #OPERATOR
 add:\+
 minus:-
@@ -54,7 +54,7 @@ equal:==
 assign:=
 unequal:!=
 
-~BI-OPERATOR
+~BI_OPERATOR
 add
 minus
 star
@@ -121,9 +121,9 @@ str:#STRING@value
 $expr:
 fac:$factor@left
 assign:$lvalue@left assign@operator $expr@right
-singop:~SINGLE-OPERATOR@operator $expr@right
+singop:~SINGLE_OPERATOR@operator $expr@right
 paren:openparen $expr@left closedparen
-biop:$expr@left ~BI-OPERATOR@operator $expr@right
+biop:$expr@left ~BI_OPERATOR@operator $expr@right
 call:$expr@left openparen@operator $expr@right closedparen
 
 $lvalue:
@@ -148,13 +148,13 @@ default:else openbracket #statements@statements closedbracket
 $elseif:
 default:elseif openbracket@condition #statements@statements closedbracket
 
-$elseif-else:
+$elseif_else:
 empty:!
 onlyelse:$else@else_block
-chain:$elseif@elseif_block $elseif-else@rest_block
+chain:$elseif@elseif_block $elseif_else@rest_block
 
 $if:
-default:if $expr@condition openbracket $statements@statements closedbracket $elseif-else@rest_block
+default:if $expr@condition openbracket $statements@statements closedbracket $elseif_else@rest_block
 
 $while:
 default:while $expr@condition openbracket $statements@statements closedbracket
@@ -229,7 +229,7 @@ array <=> pointer
 
 You might want to do something to the AST tree to make it easier to generate assembly from it. IR is something you create after you do some conversion to the AST tree.
 
-Definitions are extracted and those in a same scope are collected into a single block called `allocsyms` to be put at the beginning of the scope where all symbols in this scope are allocated at once. Specific size of symbols is not got involved yet but such re-ordering makes it easier to generate assembly thereafter. And `freesyms` is also inserted to mark the end of symbol lifetime.
+Definitions are extracted and those in a same scope are collected into a single block called `allocsyms` to be put at the beginning of the scope where all symbols in this scope are allocated at once. Specific size of symbols is not got involved yet but such re_ordering makes it easier to generate assembly thereafter. And `freesyms` is also inserted to mark the end of symbol lifetime.
 
 ```
 
@@ -237,4 +237,4 @@ Definitions are extracted and those in a same scope are collected into a single 
 
 # Assembly
 
-Here we visit the IR tree at depth-first order. For expression, temporary var is needed and a table is maintained to record used temp vars. For example, a expr node with operator=add will visit its leaves first and generate code of leaves so that values of leaves are ready when needed. The values of leaves are stored in temp vars.
+Here we visit the IR tree at depth_first order. For expression, temporary var is needed and a table is maintained to record used temp vars. For example, a expr node with operator=add will visit its leaves first and generate code of leaves so that values of leaves are ready when needed. The values of leaves are stored in temp vars.

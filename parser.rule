@@ -1,0 +1,88 @@
+
+$factor:
+id:identifier@value
+num:#NUMBER@value
+ch:#CHAR@value
+str:#STRING@value
+
+$expr:
+fac:$factor@left
+assign:$lvalue@left assign@op $expr@right
+singop:~SINGLE_op@op $expr@right
+paren:openparen $expr@left closedparen
+biop:$expr@left ~BI_op@op $expr@right
+call:$expr@left openparen@op $expr@right closedparen
+
+$lvalue:
+id:identifier@value
+deref:star@op $expr@value
+visit:$expr@left property@op identifier@right
+
+$composed_type:
+raw_type:#TYPEKW@inner_type
+paren:openparen $composed_type@inner_type closedparen
+ptr:$composed_type@pointer_type star
+nsizedarr:$composed_type@element_type open_squaredbracket closed_squaredbracket
+sizedarr:$composed_type@element_type open_squaredbracket $expr@array_size closed_squaredbracket
+
+$definition:
+deftype:let identifier@name:$composed_type@def_type assign $expr@value
+defntype:let identifier@name assign $expr@value
+
+$else:
+default:else openbracket #statements@statements closedbracket
+
+$elseif:
+default:elseif openbracket@condition #statements@statements closedbracket
+
+$elseif_else:
+empty:!
+onlyelse:$else@else_block
+chain:$elseif@elseif_block $elseif_else@rest_block
+
+$if:
+default:if $expr@condition openbracket $statements@statements closedbracket $elseif_else@rest_block
+
+$while:
+default:while $expr@condition openbracket $statements@statements closedbracket
+
+$structmembers:
+empty:!
+singmem:identifier@name:$composed_type@def_type
+multimem:identifier@name:$composed_type@def_type comma $structmembers@other_members
+
+$struct:
+default:struct identifier@name openbracket $structmembers@members closedbracket
+
+$declaration:
+varntype:let identifier@name semicolon
+var:let identifier@name colon $composed_type@def_type semicolon
+fn:fn identifier@name openparen $arglist@args closedparen $func_returntype@return_type semicolon
+struct:struct identifier@name openbracket $structmembers@members closedbracket
+
+$statement:
+expr:$expr@expr semicolon
+definition:$definition@def semicolon
+if:$if@if_stmt
+while:$while@while_stmt
+declaration:$declaration@decl_stmt
+
+$statements:
+empty:!
+stmt:$statement@stmt
+multistmt:$statement@stmt $statements@other_stmts
+
+$func_returntype:
+void:!
+hastype:minus greaterthan $composed_type@return_type
+
+$arglist_nonempty:
+singarg:identifier@name:$composed_type@arg_type
+multiarg:identifier@name:$composed_type@arg_type comma $arglist_nonempty@other_args
+
+$arglist:
+empty:!
+hasarg:$arglist_nonempty@args
+
+$function:
+default:fn identifier openparen $arglist@args closedparen $func_returntype@return_type openbracket $statements@stmts closedbracket
