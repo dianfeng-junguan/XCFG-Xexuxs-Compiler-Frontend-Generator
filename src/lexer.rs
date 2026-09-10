@@ -1,4 +1,4 @@
-use std::{eprintln, format, fs::OpenOptions, io::{Read, Write}, println};
+use std::{eprintln, format, fs::{File, OpenOptions}, io::{Read, Write}, println};
 use regex;
 
 use crate::lexer;
@@ -165,21 +165,18 @@ typedef enum{{
         ",cat_name.to_uppercase(),check_str);
         cat_check_macros.push_str(&cat_str);
     }
-    src.push_str(&token_type_enum);
-    src.push_str("
-typedef struct lexer_rule_t{
-    char* name;
-    char* pattern;
-    token_type_t tok_type;
-}lexer_rule_t;
-typedef struct{
-    token_type_t token_type;
-    char* value;
-    int line;
-    int column;
-}token_t;
-    ");
-    src.push_str(&cat_check_macros);
+    // put the token_type enum definition to the header file
+    let mut lexer_header_reader=File::open("lexer_template.h").expect("failed to open lexer header template file");
+    let mut lexer_header_code=String::new();
+    lexer_header_reader.read_to_string(&mut lexer_header_code).expect("failed to read lexer header template file");
+    // merge strs
+    let mut temp_str_merge=token_type_enum.clone();
+    temp_str_merge.push_str(&cat_check_macros);
+    lexer_header_code=lexer_header_code.replace("{%}", &temp_str_merge);
+    // generate header file 
+    let mut lexer_header_gen = File::create("lexer.h").expect("failed to create or open lexer.h");
+    lexer_header_gen.write_all(&lexer_header_code.into_bytes()).expect("failed to write to lexer.h");
+    
     // define rule array
     let mut rules_array=String::new();
     for cat in lexer_cats.iter() {
@@ -204,7 +201,7 @@ lexer_rule_t lexer_rules[]={{
     let mut template_file=OpenOptions::new().read(true).open("lexer_template.cpp").expect("failed to open lexer template file");
     let mut template_str=String::new();
     template_file.read_to_string(&mut template_str).expect("failed to read lexer template file");
-    src.push_str(&template_str);
+    src = template_str.replace("{%}", &src);
 
     if cfg!(feature="debug") {
         println!("{}",src);
@@ -212,4 +209,9 @@ lexer_rule_t lexer_rules[]={{
         lexer_output_file.write_all(&src.as_bytes()).unwrap();
     }
     src
+}
+#[test]
+fn test_generate_lexer_source(){
+    let lexer_rules = parse_lexer_rules("lexer.rule").unwrap();
+    generate_lexer_source(lexer_rules);
 }

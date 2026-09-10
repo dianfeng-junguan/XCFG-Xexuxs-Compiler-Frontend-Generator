@@ -3,7 +3,9 @@
 #include <stdlib.h>
 #include <vector>
 #include <string.h>
-std::vector<token_t> do_lex(char *str){
+#include "lexer.h"
+{%}
+tokenstream_t do_lex(char *str){
     std::vector<token_t> tokens;
     long slen=strlen(str);
     long ptr=0;
@@ -44,5 +46,6 @@ std::vector<token_t> do_lex(char *str){
             ptr++;
         }
     }
-    return tokens;
+    tokenstream_t ts(tokens);
+    return ts;
 }

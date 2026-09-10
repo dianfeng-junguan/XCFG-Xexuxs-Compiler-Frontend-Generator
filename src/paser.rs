@@ -1,4 +1,4 @@
-use std::{cmp, eprintln, fmt::{Display, Pointer}, format, fs::File, io::{Read, Write}, println, vec, write};
+use std::{cmp, collections::HashMap, eprintln, fmt::{Display, Pointer}, format, fs::File, hash::Hash, io::{Read, Write}, println, vec, write};
 
 pub enum TermType{
     ParserRuleSet,
@@ -94,6 +94,20 @@ impl Display for ParserRule {
         )
     }
 }
+
+impl PartialEq for ParserRule {
+    fn eq(&self, other: &Self) -> bool {
+        self.name == other.name
+    }
+}
+impl Eq for ParserRule {
+    
+}
+impl Hash for ParserRule {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.name.hash(state);
+    }
+}
 /// a set of rules to generate one type of node.
 pub struct ParserRuleSet{
     name:String,
@@ -107,6 +121,19 @@ impl Display for ParserRuleSet {
             let _=write!(f,"{}\n",r);
         });
         Ok(())
+    }
+}
+impl PartialEq for ParserRuleSet {
+    fn eq(&self, other: &Self) -> bool {
+        self.name == other.name
+    }
+}
+impl Eq for ParserRuleSet {
+    
+}
+impl Hash for ParserRuleSet {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.name.hash(state);
     }
 }
 #[test]
@@ -218,14 +245,21 @@ pub fn generate_parser_source(ruleset:Vec<ParserRuleSet>)->String{
     let mut rule_classdefs=String::new();
     let mut node_typeenum=Vec::new();
     let mut max_recipe_size=0;
+    // this table is used to record the class names of rulesets in generated code
+    let mut ruleset_typename_table=HashMap::new();
+    // to record the class names of rules in generated code
+    let mut rule_typename_table=HashMap::new();
     for rs in ruleset.iter() {
         // generate a base class
+        // generate ruleset class name
+        let ruleset_class_name = format!("{}_t",rs.name);
+        ruleset_typename_table.insert(rs, ruleset_class_name.clone());
         ruleset_classdefs.push_str(&format!("
-class {}_t{{
+class {}:public ast_node_t{{
 public:
 virtual node_type_t get_kind()=0;
 }};
-",rs.name)); 
+",ruleset_class_name)); 
         // generate specific classes
         for rule in rs.rules.iter() {
             let node_type = String::from("NODE_")+&rs.name.to_uppercase();
@@ -245,42 +279,113 @@ virtual node_type_t get_kind()=0;
                     "{} {};\n",memtypstr,m.name
                 ));
             });
+            // generate rule class name 
+            let rule_class_name=format!("{}_{}_t",rs.name,rule.name);
+            // add it to the table
+            rule_typename_table.insert(rule, rule_class_name.clone());
             rule_classdefs.push_str(&format!("
-class {}_{}_t:{}_t{{
+class {}:public {}{{
 public:
 {}
 node_type_t get_kind(){{return {};}}
 }};
-",rs.name,rule.name,rs.name,member_str,node_type));
+",rule_class_name,ruleset_class_name,member_str,node_type));
             if !node_typeenum.contains(&node_type) {
                 node_typeenum.push(node_type);
             }
         }
     }
+
+
+    // now generate parser functions for each rule
+    // we need to capture the tokens one by one
+    let mut code_parser_funcs=String::new();
+    for rs in ruleset.iter() {
+        let mut code_call_rule_func=String::new();
+        for rule in rs.rules.iter() {
+            /*
+            we want code like:
+            if(!parse_token(tokenstream, TOKEN_XXX,NULL))return -1;
+            if(!(node.member1=parse_token(tokenstream, TOKEN_XX)))return -1;
+            if(BELONGS_TO_CATEGORY_XXX(peek_token(tokenstream)->type)){
+                node.member2=consume_token(tokenstream);
+            }else{return -1;}
+            end_parsing(token_steam); // to make pointer actually move
+            return 0;
+             */
+            // we assume the passed class to be filled is called `node`
+            let mut code_parsing_lines=String::new();
+            for t in rule.recipe.iter() {
+                let parsing_line_code=match t.term_type {
+                    TermType::SpecificTokenType=>{
+                        let token_type_str=format!("TOKEN_{}",t.value.to_uppercase());
+                        
+                        if t.should_be_stored {
+                            format!("
+    if(!(node->{}=parse_token(tokenstream,{}))){{tokenstream->reset();delete node;return NULL;}}
+",t.to_store_in,token_type_str)
+                        } else {
+                            format!("
+    if(!parse_token(tokenstream,{})){{tokenstream->reset();delete node;return NULL;}}
+",token_type_str)
+                        }
+                    },
+                    TermType::TokenCategory=>{
+                        format!("
+    if(BELONGS_TO_CATEGORY_{}(tokenstream->peek()->token_type)){{
+        node->{} = tokenstream->consume();
+    }}else{{tokenstream->reset();delete node;return NULL;}}
+",t.value.to_uppercase(), t.to_store_in)
+                    },
+                    TermType::ParserRuleSet=>{
+                        // just generate the name of the called function
+                        format!("
+    if(!(node->{}=parse_{}(tokenstream))){{tokenstream->reset();delete node;return NULL;}}
+",t.to_store_in,t.value)
+
+                    }
+                };
+                code_parsing_lines.push_str(&parsing_line_code);
+                code_parsing_lines.push_str("\n");
+            }
+            // now one parsing func is done
+            let ruleset_class_name=format!("{}_{}",rs.name,rule.name);
+            code_parser_funcs.push_str(&format!("
+{}_t* parse_{}(tokenstream_t *tokenstream){{
+    {}_t* node=new {}_t();
+    {}
+    tokenstream->end_parsing();
+    return node;
+}}
+            ",ruleset_class_name, ruleset_class_name, ruleset_class_name, ruleset_class_name, code_parsing_lines));
+            code_call_rule_func.push_str(&format!("
+if(node=parse_{}_{}(tokenstream)){{return node;}}
+",rs.name,rule.name));
+        }
+        // now create a ruleset parser_function for calling
+        code_parser_funcs.push_str(&format!("
+{}_t* parse_{}(tokenstream_t *tokenstream){{
+    {}_t* node;
+    {}
+    return NULL;
+}}
+",rs.name,rs.name,rs.name,code_call_rule_func));
+    }
+
+
     let rule_structdef_str=format!("
 typedef struct{{
     char* name;
-    int recipe_size;
-    node_type_t recipe[{}];
+    int (*parser)(tokenstream_t *ts, void* dest);
 }}parser_rule_t;
-",max_recipe_size);
+");
     // generate rule array
-    // fixme cannot include token type and token categories
     let mut rule_array_str=String::new();
     for rs in ruleset.iter() {
-        rs.rules.iter().for_each(|r|{
-            let mut recipe_str=String::new();
-            r.recipe.iter().enumerate().for_each(|(i,t)|{
-                recipe_str.push_str(&format!("NODE_{}",t.value.to_uppercase()));
-                if i<r.recipe.len()-1 {
-                    recipe_str.push_str(", ");
-                }
-            });
-            rule_array_str.push_str(&format!(
-                "{{.name=\"{}\", .recipe_size={}, recipe={{{}}}}},\n",
-                r.name, r.recipe.len(), recipe_str
-            ));
-        });
+        rule_array_str.push_str(&format!(
+            "{{.name=\"{}\", .parser=parse_{}}},\n",
+            rs.name, rs.name
+        ));
     }
     let rule_array_str=format!("
 parser_rule_t parser_rules[]={{
@@ -297,8 +402,16 @@ typedef enum{{
 ",nodetypeenum_str));
     src.push_str(&ruleset_classdefs);
     src.push_str(&rule_classdefs);
+    src.push_str(&code_parser_funcs);
     src.push_str(&rule_structdef_str);
     src.push_str(&rule_array_str);
+
+    // put generated code into template
+    let mut template_reader=File::open("parser_template.cpp").expect("failed to read parser template file");
+    let mut template_code=String::new();
+    template_reader.read_to_string(&mut template_code).expect("failed to read parser template file");
+    template_code=template_code.replace("{%}", &src);
+    src=template_code;
     if cfg!(feature="debug") {
         println!("{}",src);
         let mut parser_output=File::create("parser_test.cpp").unwrap();
