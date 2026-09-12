@@ -97,6 +97,34 @@ Another function is created `xxx_start` which is basically trying non-left-combi
 
 ### 3. Sematic Check
 
+This stage includes symbol table establishment, type check, control flow validation and error report.
+
+By default, the valid scope of a function/struct is the whole block the it is in, whether before or after, while a variable only gets accessible after its definition or declaration.
+
+A framework of sematic check is generated including checker functions. The specific checking behavior needs to be written manually.
+
+A sematic check rule file looks like this:
+
+```
+[resolve]
+definition.deftype: declare(name) check_initializer(value)
+definition.defntype: declare(name) check_initializer(value)
+statements.definition: visit(def)
+
+[typecheck]
+expr.add:check_addable(left,right)
+definition.deftype: check_type_assignable(def_type,value)
+
+[flow]
+function.default: all_paths_return()
+```
+
+`[resolve]` is a stage indicator. The generated checker scans the AST stage by stage, each of which checking a specific category of sematic rules.
+
+`ruleset.rule` is the node that is checked. The node scanned will be applied with functions following `:`.
+
+Those like `declare(name)` are check functions. The generator collects the functions appeared and create empty definitions of them. Despite there are already arguments passed in the rule file, they only act as a comment part that explains what will be used in the coming-up checking. The real arguments include at least the node itself and a context variable where necessary sematic information is included.
+
 #### Symbol Table 
 
 #### Type Inference
