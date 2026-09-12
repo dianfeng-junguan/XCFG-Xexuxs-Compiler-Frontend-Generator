@@ -1,9 +1,9 @@
 use std::{eprint, println};
 
-use crate::{lexer::{generate_lexer_source, parse_lexer_rules}, paser::{generate_parser_source, parse_parser_rules}};
+use crate::{lexer::{generate_lexer_source, parse_lexer_rules}, parser::{generate_parser_source, parse_parser_rules}};
 
 pub mod lexer;
-pub mod paser;
+pub mod parser;
 fn main() {
     println!("Reading lexer.rule");
     let lexer_rules=parse_lexer_rules("lexer.rule");

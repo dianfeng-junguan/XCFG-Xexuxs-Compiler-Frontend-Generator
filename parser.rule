@@ -1,55 +1,116 @@
-
 $factor:
 id:identifier@value
 num:#NUMBER@value
 ch:#CHAR@value
 str:#STRING@value
 
+$glued_factor:
+paren: openparen $ultimate_expr@expr closedparen
+def: $lvalue@left property identifier@right
+value: $factor@value
+call: $lvalue@left openparen $arglist@args closedparen
+
+$single_op_factor:
+bitnot: bitnot $single_op_factor@expr
+neg: minus $single_op_factor@expr
+ref: bitand $single_op_factor@expr
+deref: star $single_op_factor@expr
+not: not $single_op_factor@expr
+none: $glued_factor@expr
+
+$power_factor:
+pow: $single_op_factor@left bitxor $power_factor@right
+none: $single_op_factor@expr
+
+$term:
+mul: $power_factor@left star $term@right
+div: $power_factor@left slash $term@right
+mod: $power_factor@left percent $term@right
+bitand: $power_factor@left bitand $term@right
+bitor: $power_factor@left bitor $term@right
+shiftleft: $power_factor@left shiftleft $term@right
+shiftright: $power_factor@left shiftright $term@right
+factor: $power_factor@expr
+
 $expr:
-fac:$factor@left
-assign:$lvalue@left assign@op $expr@right
-singop:~SINGLE_op@op $expr@right
-paren:openparen $expr@left closedparen
-biop:$expr@left ~BI_op@op $expr@right
-call:$expr@left openparen@op $expr@right closedparen
+add: $term@left add $expr@right
+sub: $term@left minus $expr@right
+term: $term@expr
+
+$logic_expr_and:
+and: $expr@left and $logic_expr_and@right
+none: $expr@expr
+
+$logic_expr_or:
+or: $logic_expr_and@left or $logic_expr_or@right
+none: $logic_expr_and@expr
+
+$logic_expr_eq:
+eq: $logic_expr_or@left equal $logic_expr_eq@right
+neq: $logic_expr_or@left unequal $logic_expr_eq@right
+gt: $logic_expr_or@left greaterthan $logic_expr_eq@right
+lt: $logic_expr_or@left lessthan $logic_expr_eq@right
+ge: $logic_expr_or@left greaterequal $logic_expr_eq@right
+le: $logic_expr_or@left lessequal $logic_expr_eq@right
+none: $logic_expr_or@expr
+
+$assign_expr:
+assign: $lvalue@left assign $assign_expr@right
+plus_assign: $lvalue@left addassign $assign_expr@right
+minus_assign: $lvalue@left minusassign $assign_expr@right
+mul_assign: $lvalue@left mulassign $assign_expr@right
+div_assign: $lvalue@left divassign $assign_expr@right
+mod_assign: $lvalue@left modassign $assign_expr@right
+bitand_assign: $lvalue@left bitandassign $assign_expr@right
+bitor_assign: $lvalue@left bitorassign $assign_expr@right
+shiftleft_assign: $lvalue@left shiftleftassign $assign_expr@right
+shiftright_assign: $lvalue@left shiftrightassign $assign_expr@right
+logic_expr: $logic_expr_eq@expr
+
+$ultimate_expr:
+def: $assign_expr@expr
+
+$lvalue_noproperty:
+parened: openparen $ultimate_expr@expr closedparen
+deref: star $lvalue@derefee
+id: identifier@id
 
 $lvalue:
-id:identifier@value
-deref:star@op $expr@value
-visit:$expr@left property@op identifier@right
+prop: $lvalue_noproperty@left property identifier@right
+noprop: $lvalue_noproperty@expr
 
 $composed_type:
 raw_type:#TYPEKW@inner_type
 paren:openparen $composed_type@inner_type closedparen
 ptr:$composed_type@pointer_type star
 nsizedarr:$composed_type@element_type open_squaredbracket closed_squaredbracket
-sizedarr:$composed_type@element_type open_squaredbracket $expr@array_size closed_squaredbracket
+sizedarr:$composed_type@element_type open_squaredbracket $ultimate_expr@array_size closed_squaredbracket
 
 $definition:
-deftype:let identifier@name:$composed_type@def_type assign $expr@value
-defntype:let identifier@name assign $expr@value
+deftype:let identifier@name $composed_type@def_type assign $ultimate_expr@value
+defntype:let identifier@name assign $ultimate_expr@value
 
 $else:
-default:else openbracket #statements@statements closedbracket
+default:else openbracket $statements@statements closedbracket
 
 $elseif:
-default:elseif openbracket@condition #statements@statements closedbracket
+default:else if openbracket $ultimate_expr@condition $statements@statements closedbracket
 
 $elseif_else:
-empty:!
 onlyelse:$else@else_block
 chain:$elseif@elseif_block $elseif_else@rest_block
+empty:!
 
 $if:
-default:if $expr@condition openbracket $statements@statements closedbracket $elseif_else@rest_block
+default:if $ultimate_expr@condition openbracket $statements@statements closedbracket $elseif_else@rest_block
 
 $while:
-default:while $expr@condition openbracket $statements@statements closedbracket
+default:while $ultimate_expr@condition openbracket $statements@statements closedbracket
 
 $structmembers:
+singmem:identifier@name $composed_type@def_type
+multimem:identifier@name $composed_type@def_type comma $structmembers@other_members
 empty:!
-singmem:identifier@name:$composed_type@def_type
-multimem:identifier@name:$composed_type@def_type comma $structmembers@other_members
 
 $struct:
 default:struct identifier@name openbracket $structmembers@members closedbracket
@@ -61,28 +122,34 @@ fn:fn identifier@name openparen $arglist@args closedparen $func_returntype@retur
 struct:struct identifier@name openbracket $structmembers@members closedbracket
 
 $statement:
-expr:$expr@expr semicolon
+expr:$ultimate_expr@expr semicolon
 definition:$definition@def semicolon
 if:$if@if_stmt
 while:$while@while_stmt
 declaration:$declaration@decl_stmt
 
 $statements:
-empty:!
 stmt:$statement@stmt
 multistmt:$statement@stmt $statements@other_stmts
+empty:!
 
 $func_returntype:
-void:!
 hastype:minus greaterthan $composed_type@return_type
+void:!
 
 $arglist_nonempty:
-singarg:identifier@name:$composed_type@arg_type
-multiarg:identifier@name:$composed_type@arg_type comma $arglist_nonempty@other_args
+singarg:identifier@name $composed_type@arg_type
+multiarg:identifier@name $composed_type@arg_type comma $arglist_nonempty@other_args
 
 $arglist:
-empty:!
 hasarg:$arglist_nonempty@args
+empty:!
 
 $function:
-default:fn identifier openparen $arglist@args closedparen $func_returntype@return_type openbracket $statements@stmts closedbracket
+default:fn identifier@name openparen $arglist@args closedparen $func_returntype@return_type openbracket $statements@stmts closedbracket
+
+$top_statement:
+func_def:$function@func
+decl:$declaration@decl
+var_def:$definition@def semicolon
+structdef:$struct@structdef

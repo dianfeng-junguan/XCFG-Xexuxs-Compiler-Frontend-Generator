@@ -45,13 +45,19 @@ pub fn parse_lexer_rules(path:&str)->Option<Vec<LexerCategory>>{
             continue;
         }
         if let Some((name,pat))=line.split_once(":"){
+            
             // test compile the pattern
             if regex::Regex::new(pat).is_err(){
                 eprintln!("lexer rule file parsing err: failed to compile regex at line {}",i+1);
                 continue;
             }
             let one_rule=LexerRule::new(name, pat);
+            
             let category_num=lexer_categories.len();
+            if category_num==0 {
+                eprintln!("lexer rule file parsing err: rule defined before category definition");
+                continue;
+            }
             if let Some(current_cat) = lexer_categories.get_mut(category_num-1) {
                 match current_cat {
                     // add it to the category
@@ -59,6 +65,11 @@ pub fn parse_lexer_rules(path:&str)->Option<Vec<LexerCategory>>{
                         refed_rules.push(one_rule.name.to_string());
                     },
                     LexerCategory::LexerRuleCategory { name, rules }=>{
+                        // check if this pattern matches empty string, which is not allowed
+                        if regex::Regex::new(pat).unwrap().find("").map_or(false, |m| m.start()==0 && m.end()==0) {
+                            eprintln!("lexer rule file parsing err at line {}: empty regex string or regex string that can match empty string",i+1);
+                            continue;
+                        }
                         rules.push(one_rule);
                     }
                 }
@@ -179,12 +190,14 @@ typedef enum{{
     
     // define rule array
     let mut rules_array=String::new();
+    let mut rules_num=0;
     for cat in lexer_cats.iter() {
         match cat {
             LexerCategory::LexerRuleCategory { name, rules }=>{
                 for rule in rules.iter() {
                     let dealt_pat=rule.pattern_str.replace("\\", "\\\\").replace("\"", "\\\"").replace("\'", "\\\'");
-                    rules_array.push_str(&format!("{{.name=\"{}\",.pattern=\"{}\",.tok_type=TOKEN_{}}},\n",rule.name,dealt_pat,rule.name.to_uppercase()));
+                    rules_array.push_str(&format!("{{.name=(const char*)\"{}\",.pattern=(const char*)\"{}\",.tok_type=TOKEN_{}}},\n",rule.name,dealt_pat,rule.name.to_uppercase()));
+                    rules_num+=1;
                 }
             },
             _=>{}
@@ -195,7 +208,7 @@ typedef enum{{
 lexer_rule_t lexer_rules[]={{
     {}
 }};
-",rules_array.len(),rules_array);
+",rules_num,rules_array);
     src.push_str(&rules_array);
 
     let mut template_file=OpenOptions::new().read(true).open("lexer_template.cpp").expect("failed to open lexer template file");

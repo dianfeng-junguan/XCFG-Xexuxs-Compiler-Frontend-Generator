@@ -1,5 +1,7 @@
+#pragma once
+#include <cassert>
 #include <vector>
-
+#include <string>
 
 typedef enum{
 TOKEN_LET,
@@ -20,6 +22,25 @@ TOKEN_FLOAT,
 TOKEN_STRING,
 TOKEN_CHAR,
 TOKEN_IDENTIFIER,
+TOKEN_ADDASSIGN,
+TOKEN_MINUSASSIGN,
+TOKEN_MULASSIGN,
+TOKEN_DIVASSIGN,
+TOKEN_MODASSIGN,
+TOKEN_BITANDASSIGN,
+TOKEN_BITORASSIGN,
+TOKEN_SHIFTLEFTASSIGN,
+TOKEN_SHIFTRIGHTASSIGN,
+TOKEN_GREATEREQUAL,
+TOKEN_LESSEQUAL,
+TOKEN_EQUAL,
+TOKEN_ASSIGN,
+TOKEN_UNEQUAL,
+TOKEN_SHIFTLEFT,
+TOKEN_SHIFTRIGHT,
+TOKEN_OR,
+TOKEN_GREATERTHAN,
+TOKEN_LESSTHAN,
 TOKEN_ADD,
 TOKEN_MINUS,
 TOKEN_STAR,
@@ -29,24 +50,14 @@ TOKEN_PROPERTY,
 TOKEN_OPENPAREN,
 TOKEN_CLOSEDPAREN,
 TOKEN_AND,
-TOKEN_OR,
 TOKEN_NOT,
 TOKEN_BITAND,
 TOKEN_BITOR,
 TOKEN_BITNOT,
 TOKEN_BITXOR,
-TOKEN_SHIFTLEFT,
-TOKEN_SHIFTRIGHT,
 TOKEN_COMMA,
-TOKEN_OPEN_SQUAREBRACKET,
-TOKEN_CLOSED_SQUAREBRACKET,
-TOKEN_GREATERTHAN,
-TOKEN_GREATEREQUAL,
-TOKEN_LESSEQUAL,
-TOKEN_LESSTHAN,
-TOKEN_EQUAL,
-TOKEN_ASSIGN,
-TOKEN_UNEQUAL,
+TOKEN_OPEN_SQUAREDBRACKET,
+TOKEN_CLOSED_SQUAREDBRACKET,
 TOKEN_OPENBRACKET,
 TOKEN_CLOSEDBRACKET,
 TOKEN_SEMICOLON,
@@ -69,9 +80,9 @@ TOKEN_WHITESPACE,
         
 #define BELONGS_TO_CATEGORY_IDENTIFIER(toktype) (toktype==TOKEN_IDENTIFIER)
         
-#define BELONGS_TO_CATEGORY_OPERATOR(toktype) (toktype==TOKEN_ADD||toktype==TOKEN_MINUS||toktype==TOKEN_STAR||toktype==TOKEN_SLASH||toktype==TOKEN_PERCENT||toktype==TOKEN_PROPERTY||toktype==TOKEN_OPENPAREN||toktype==TOKEN_CLOSEDPAREN||toktype==TOKEN_AND||toktype==TOKEN_OR||toktype==TOKEN_NOT||toktype==TOKEN_BITAND||toktype==TOKEN_BITOR||toktype==TOKEN_BITNOT||toktype==TOKEN_BITXOR||toktype==TOKEN_SHIFTLEFT||toktype==TOKEN_SHIFTRIGHT||toktype==TOKEN_COMMA||toktype==TOKEN_OPEN_SQUAREBRACKET||toktype==TOKEN_CLOSED_SQUAREBRACKET||toktype==TOKEN_GREATERTHAN||toktype==TOKEN_GREATEREQUAL||toktype==TOKEN_LESSEQUAL||toktype==TOKEN_LESSTHAN||toktype==TOKEN_EQUAL||toktype==TOKEN_ASSIGN||toktype==TOKEN_UNEQUAL)
+#define BELONGS_TO_CATEGORY_OPERATOR(toktype) (toktype==TOKEN_ADDASSIGN||toktype==TOKEN_MINUSASSIGN||toktype==TOKEN_MULASSIGN||toktype==TOKEN_DIVASSIGN||toktype==TOKEN_MODASSIGN||toktype==TOKEN_BITANDASSIGN||toktype==TOKEN_BITORASSIGN||toktype==TOKEN_SHIFTLEFTASSIGN||toktype==TOKEN_SHIFTRIGHTASSIGN||toktype==TOKEN_GREATEREQUAL||toktype==TOKEN_LESSEQUAL||toktype==TOKEN_EQUAL||toktype==TOKEN_ASSIGN||toktype==TOKEN_UNEQUAL||toktype==TOKEN_SHIFTLEFT||toktype==TOKEN_SHIFTRIGHT||toktype==TOKEN_OR||toktype==TOKEN_GREATERTHAN||toktype==TOKEN_LESSTHAN||toktype==TOKEN_ADD||toktype==TOKEN_MINUS||toktype==TOKEN_STAR||toktype==TOKEN_SLASH||toktype==TOKEN_PERCENT||toktype==TOKEN_PROPERTY||toktype==TOKEN_OPENPAREN||toktype==TOKEN_CLOSEDPAREN||toktype==TOKEN_AND||toktype==TOKEN_NOT||toktype==TOKEN_BITAND||toktype==TOKEN_BITOR||toktype==TOKEN_BITNOT||toktype==TOKEN_BITXOR||toktype==TOKEN_COMMA||toktype==TOKEN_OPEN_SQUAREDBRACKET||toktype==TOKEN_CLOSED_SQUAREDBRACKET)
         
-#define BELONGS_TO_CATEGORY_BI_OPERATOR(toktype) (toktype==TOKEN_ADD||toktype==TOKEN_MINUS||toktype==TOKEN_STAR||toktype==TOKEN_SLASH||toktype==TOKEN_AND||toktype==TOKEN_OR||toktype==TOKEN_NOT||toktype==TOKEN_BITAND||toktype==TOKEN_BITOR||toktype==TOKEN_BITXOR||toktype==TOKEN_PROPERTY||toktype==TOKEN_PERCENT||toktype==TOKEN_UNEQUAL||toktype==TOKEN_GREATERTHAN||toktype==TOKEN_LESSTHAN||toktype==TOKEN_GREATEREQUAL||toktype==TOKEN_LESSEQUAL||toktype==TOKEN_SHIFTLEFT||toktype==TOKEN_SHIFTRIGHT)
+#define BELONGS_TO_CATEGORY_BI_OPERATOR(toktype) (toktype==TOKEN_ADD||toktype==TOKEN_MINUS||toktype==TOKEN_STAR||toktype==TOKEN_SLASH||toktype==TOKEN_AND||toktype==TOKEN_OR||toktype==TOKEN_NOT||toktype==TOKEN_BITAND||toktype==TOKEN_BITOR||toktype==TOKEN_BITXOR||toktype==TOKEN_PROPERTY||toktype==TOKEN_PERCENT||toktype==TOKEN_UNEQUAL||toktype==TOKEN_GREATERTHAN||toktype==TOKEN_LESSTHAN||toktype==TOKEN_GREATEREQUAL||toktype==TOKEN_LESSEQUAL||toktype==TOKEN_SHIFTLEFT||toktype==TOKEN_SHIFTRIGHT||toktype==TOKEN_ADDASSIGN||toktype==TOKEN_MINUSASSIGN||toktype==TOKEN_MULASSIGN||toktype==TOKEN_DIVASSIGN||toktype==TOKEN_MODASSIGN||toktype==TOKEN_BITANDASSIGN||toktype==TOKEN_BITORASSIGN||toktype==TOKEN_SHIFTLEFTASSIGN||toktype==TOKEN_SHIFTRIGHTASSIGN)
         
 #define BELONGS_TO_CATEGORY_SINGLE_OPERATOR(toktype) (toktype==TOKEN_ADD||toktype==TOKEN_MINUS||toktype==TOKEN_STAR||toktype==TOKEN_NOT||toktype==TOKEN_BITNOT||toktype==TOKEN_BITAND)
         
@@ -82,46 +93,54 @@ TOKEN_WHITESPACE,
 #define BELONGS_TO_CATEGORY_WHITESPACE(toktype) (toktype==TOKEN_WHITESPACE)
         
 typedef struct lexer_rule_t{
-    char* name;
-    char* pattern;
+    const char* name;
+    const char* pattern;
     token_type_t tok_type;
 }lexer_rule_t;
 typedef struct _token_t{
     token_type_t token_type;
-    char* value;
+    std::string value;
     int line;
     int column;
 }token_t;
 class tokenstream_t{
     public:
-        tokenstream_t(std::vector<token_t> tokens):tokens(tokens),ptr(0),buffer_ptr(0){}
+        tokenstream_t(std::vector<token_t> tokens):tokens(tokens),ptrs(1, 0){}
         token_t *peek(){
-            if(ptr>=tokens.size()){
+            if(ptrs.back()>=tokens.size()){
                 return NULL;
             }
-            return &tokens[buffer_ptr];
+            return &tokens[ptrs.back()];
         }
         void next(){
-            buffer_ptr++;
+            assert(ptrs.size()>0);
+            ptrs.back()++;
+        }
+        void begin_parsing(){
+            ptrs.push_back(ptrs.back());
         }
         void end_parsing(){
-            ptr=buffer_ptr;
+            assert(ptrs.size()>=2);
+            long last_ptr=ptrs.back();
+            ptrs.pop_back();
+            ptrs.back()=last_ptr;
         }
         void reset(){
-            buffer_ptr=ptr;
+            if(ptrs.size()>1){
+                ptrs.pop_back();
+            }
         }
         token_t *consume(){
-            if(ptr>=tokens.size()){
+            if(ptrs.back()>=tokens.size()){
                 return NULL;
             }
-            token_t *token=&tokens[buffer_ptr++];
+            token_t *token=&tokens[ptrs.back()++];
             return token;
         }
         bool eof(){
-            return ptr>=tokens.size();
+            return ptrs.back()>=tokens.size();
         }
     private:
         std::vector<token_t> tokens;
-        long ptr;
-        long buffer_ptr;
+        std::vector<long> ptrs;
 };
