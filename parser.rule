@@ -127,6 +127,10 @@ definition:$definition@def semicolon
 if:$if@if_stmt
 while:$while@while_stmt
 declaration:$declaration@decl_stmt
+break:break semicolon
+continue:continue semicolon
+return_empty:return semicolon
+return_sth:return $ultimate_expr@value semicolon
 
 $statements:
 stmt:$statement@stmt

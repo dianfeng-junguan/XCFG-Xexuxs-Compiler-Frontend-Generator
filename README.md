@@ -97,33 +97,59 @@ Another function is created `xxx_start` which is basically trying non-left-combi
 
 ### 3. Sematic Check
 
-This stage includes symbol table establishment, type check, control flow validation and error report.
+This stage includes symbol table establishment, type checking, control-flow validation and diagnostics.
 
-By default, the valid scope of a function/struct is the whole block the it is in, whether before or after, while a variable only gets accessible after its definition or declaration.
+By default, functions and struct types are visible throughout their containing block, while variables become visible after their declaration or definition. The semantic checker is organized as several passes:
 
-A framework of sematic check is generated including checker functions. The specific checking behavior needs to be written manually.
+```
+predeclare  collect names that are visible throughout a scope
+resolve    create scopes and resolve symbols and members
+typecheck  infer expression types and validate operations
+flow       validate returns, loops and reachability
+```
 
-A sematic check rule file looks like this:
+A semantic rule file is `sematic.rule`. Its basic form is:
+
+```
+[pass]
+ruleset.rule:
+    enter check_before_children(arguments)
+    children member1 member2
+    leave check_after_children(arguments)
+```
+
+`[pass]` selects the semantic pass. `ruleset.rule` identifies an AST node, for example `expr.add` refers to the `add` rule under `$expr` in `parser.rule`.
+
+The three traversal directives are explicit:
+
+* `enter` runs when the visitor enters the node. Use it to create scopes, establish context, or predeclare symbols.
+* `children` recursively visits the listed AST members. The members are the names after `@` in `parser.rule`.
+* `leave` runs after the listed children have been visited. Use it for checks that depend on child results, such as type checking and control-flow aggregation.
+
+For example:
 
 ```
 [resolve]
-definition.deftype: declare(name) check_initializer(value)
-definition.defntype: declare(name) check_initializer(value)
-statements.definition: visit(def)
+function.default:
+    enter enter_function_scope()
+    enter declare_parameters(args)
+    children return_type stmts
+    leave leave_scope()
 
 [typecheck]
-expr.add:check_addable(left,right)
-definition.deftype: check_type_assignable(def_type,value)
+expr.add:
+    children left right
+    leave check_addable(left,right) infer_binary_result_type(left,right)
 
 [flow]
-function.default: all_paths_return()
+function.default:
+    children stmts
+    leave require_all_paths_return(stmts)
 ```
 
-`[resolve]` is a stage indicator. The generated checker scans the AST stage by stage, each of which checking a specific category of sematic rules.
+The generator can collect the action names and generate their declarations or empty definitions. Arguments such as `left` and `right` document which node members an action uses; the generated implementation should also receive the current node and a semantic context containing scopes, types and diagnostics.
 
-`ruleset.rule` is the node that is checked. The node scanned will be applied with functions following `:`.
-
-Those like `declare(name)` are check functions. The generator collects the functions appeared and create empty definitions of them. Despite there are already arguments passed in the rule file, they only act as a comment part that explains what will be used in the coming-up checking. The real arguments include at least the node itself and a context variable where necessary sematic information is included.
+The usual dependency order is `predeclare -> resolve -> typecheck -> flow`. Within one node, scope/context actions normally run in `enter`, child-dependent checks in `leave`.
 
 #### Symbol Table 
 

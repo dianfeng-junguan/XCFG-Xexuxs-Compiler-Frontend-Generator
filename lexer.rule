@@ -7,6 +7,7 @@ else:\belse\b
 while:\bwhile\b
 break:\bbreak\b
 return:\breturn\b
+continue:\bcontinue\b
 include:\binclude\b
 #TYPEKW
 int:\bint\b
