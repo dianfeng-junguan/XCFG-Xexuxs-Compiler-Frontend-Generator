@@ -4,6 +4,7 @@ use crate::{lexer::{generate_lexer_source, parse_lexer_rules}, parser::{generate
 
 pub mod lexer;
 pub mod parser;
+pub mod sematic;
 fn main() {
     println!("Reading lexer.rule");
     let lexer_rules=parse_lexer_rules("lexer.rule");

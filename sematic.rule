@@ -81,121 +81,165 @@ statement.return_sth:
 [typecheck]
 definition.deftype:
     children def_type value
-    leave check_assignable(def_type,value) mark_initialized(name)
+    leave check_assignable(def_type,value)
+    leave mark_initialized(name)
 definition.defntype:
     children value
-    leave infer_variable_type(name,value) mark_initialized(name)
+    leave infer_variable_type(name,value)
+    leave mark_initialized(name)
 assign_expr.assign:
     children left right
-    leave require_modifiable_lvalue(left) check_assignable(left,right)
+    leave require_modifiable_lvalue(left)
+    leave check_assignable(left,right)
 assign_expr.plus_assign:
     children left right
-    leave require_modifiable_lvalue(left) check_addable(left,right)
+    leave require_modifiable_lvalue(left)
+    leave check_addable(left,right)
 assign_expr.minus_assign:
     children left right
-    leave require_modifiable_lvalue(left) check_minusable(left,right)
+    leave require_modifiable_lvalue(left)
+    leave check_minusable(left,right)
 assign_expr.mul_assign:
     children left right
-    leave require_modifiable_lvalue(left) check_mulable(left,right)
+    leave require_modifiable_lvalue(left)
+    leave check_mulable(left,right)
 assign_expr.div_assign:
     children left right
-    leave require_modifiable_lvalue(left) check_divable(left,right)
+    leave require_modifiable_lvalue(left)
+    leave check_divable(left,right)
 assign_expr.mod_assign:
     children left right
-    leave require_modifiable_lvalue(left) check_modable(left,right)
+    leave require_modifiable_lvalue(left)
+    leave check_modable(left,right)
 assign_expr.bitand_assign:
     children left right
-    leave require_modifiable_lvalue(left) check_bitandable(left,right)
+    leave require_modifiable_lvalue(left)
+    leave check_bitandable(left,right)
 assign_expr.bitor_assign:
     children left right
-    leave require_modifiable_lvalue(left) check_bitorable(left,right)
+    leave require_modifiable_lvalue(left)
+    leave check_bitorable(left,right)
 assign_expr.shiftleft_assign:
     children left right
-    leave require_modifiable_lvalue(left) check_shiftleftable(left,right)
+    leave require_modifiable_lvalue(left)
+    leave check_shiftleftable(left,right)
 assign_expr.shiftright_assign:
     children left right
-    leave require_modifiable_lvalue(left) check_shiftrightable(left,right)
+    leave require_modifiable_lvalue(left)
+    leave check_shiftrightable(left,right)
 logic_expr_eq.eq:
     children left right
-    leave check_equalable(left,right) set_boolean_type()
+    leave check_equalable(left,right)
+    leave set_boolean_type()
 logic_expr_eq.neq:
     children left right
-    leave check_nequalable(left,right) set_boolean_type()
+    leave check_nequalable(left,right)
+    leave set_boolean_type()
 logic_expr_eq.gt:
     children left right
-    leave check_comparable(left,right) set_boolean_type()
+    leave check_comparable(left,right)
+    leave set_boolean_type()
 logic_expr_eq.lt:
     children left right
-    leave check_comparable(left,right) set_boolean_type()
+    leave check_comparable(left,right)
+    leave set_boolean_type()
 logic_expr_eq.ge:
     children left right
-    leave check_comparable(left,right) set_boolean_type()
+    leave check_comparable(left,right)
+    leave set_boolean_type()
 logic_expr_eq.le:
     children left right
-    leave check_comparable(left,right) set_boolean_type()
+    leave check_comparable(left,right)
+    leave set_boolean_type()
 logic_expr_or.or:
     children left right
-    leave require_boolean(left) require_boolean(right) set_boolean_type()
+    leave require_boolean(left)
+    leave require_boolean(right)
+    leave set_boolean_type()
 logic_expr_and.and:
     children left right
-    leave require_boolean(left) require_boolean(right) set_boolean_type()
+    leave require_boolean(left)
+    leave require_boolean(right)
+    leave set_boolean_type()
 expr.add:
     children left right
-    leave check_addable(left,right) infer_binary_result_type(left,right)
+    leave check_addable(left,right)
+    leave infer_binary_result_type(left,right)
 expr.sub:
     children left right
-    leave check_minusable(left,right) infer_binary_result_type(left,right)
+    leave check_minusable(left,right)
+    leave infer_binary_result_type(left,right)
 term.mul:
     children left right
-    leave check_mulable(left,right) infer_binary_result_type(left,right)
+    leave check_mulable(left,right)
+    leave infer_binary_result_type(left,right)
 term.div:
     children left right
-    leave check_divable(left,right) infer_binary_result_type(left,right)
+    leave check_divable(left,right)
+    leave infer_binary_result_type(left,right)
 term.mod:
     children left right
-    leave check_modable(left,right) infer_binary_result_type(left,right)
+    leave check_modable(left,right)
+    leave infer_binary_result_type(left,right)
 term.bitand:
     children left right
-    leave check_bitandable(left,right) infer_binary_result_type(left,right)
+    leave check_bitandable(left,right)
+    leave infer_binary_result_type(left,right)
 term.bitor:
     children left right
-    leave check_bitorable(left,right) infer_binary_result_type(left,right)
+    leave check_bitorable(left,right)
+    leave infer_binary_result_type(left,right)
 term.shiftleft:
     children left right
-    leave check_shiftleftable(left,right) infer_binary_result_type(left,right)
+    leave check_shiftleftable(left,right)
+    leave infer_binary_result_type(left,right)
 term.shiftright:
     children left right
-    leave check_shiftrightable(left,right) infer_binary_result_type(left,right)
+    leave check_shiftrightable(left,right)
+    leave infer_binary_result_type(left,right)
 power_factor.pow:
     children left right
-    leave require_numeric(left) require_numeric(right) infer_binary_result_type(left,right)
+    leave require_numeric(left)
+    leave require_numeric(right)
+    leave infer_binary_result_type(left,right)
 single_op_factor.bitnot:
     children expr
-    leave require_numeric(expr) propagate_type(expr)
+    leave require_numeric(expr)
+    leave propagate_type(expr)
 single_op_factor.neg:
     children expr
-    leave require_numeric(expr) propagate_type(expr)
+    leave require_numeric(expr)
+    leave propagate_type(expr)
 single_op_factor.ref:
     children expr
-    leave require_lvalue(expr) infer_pointer_type(expr)
+    leave require_lvalue(expr)
+    leave infer_pointer_type(expr)
 single_op_factor.deref:
     children expr
-    leave require_pointer(expr) infer_pointee_type(expr)
+    leave require_pointer(expr)
+    leave infer_pointee_type(expr)
 single_op_factor.not:
     children expr
-    leave require_boolean(expr) set_boolean_type()
+    leave require_boolean(expr)
+    leave set_boolean_type()
 lvalue_noproperty.deref:
     children derefee
-    leave require_pointer(derefee) infer_pointee_type(derefee)
+    leave require_pointer(derefee)
+    leave infer_pointee_type(derefee)
 glued_factor.call:
     children left args
-    leave require_callable(left) check_argument_count(left,args) check_argument_types(left,args) infer_call_result_type(left)
+    leave require_callable(left)
+    leave check_argument_count(left,args)
+    leave check_argument_types(left,args)
+    leave infer_call_result_type(left)
 glued_factor.def:
     children left
-    leave check_member_access(left,right) propagate_member_type(left,right)
+    leave check_member_access(left,right)
+    leave propagate_member_type(left,right)
 lvalue.prop:
     children left
-    leave check_member_access(left,right) propagate_member_type(left,right)
+    leave check_member_access(left,right)
+    leave propagate_member_type(left,right)
 factor.id:
     leave propagate_symbol_type(value)
 factor.num:
@@ -233,12 +277,17 @@ composed_type.nsizedarr:
     leave check_valid_type(element_type)
 composed_type.sizedarr:
     children element_type array_size
-    leave check_valid_type(element_type) require_integer(array_size) require_constant_expression(array_size) require_positive(array_size)
+    leave check_valid_type(element_type)
+    leave require_integer(array_size)
+    leave require_constant_expression(array_size)
+    leave require_positive(array_size)
 statement.return_empty:
-    leave require_function_context() check_empty_return_type()
+    leave require_function_context()
+    leave check_empty_return_type()
 statement.return_sth:
     children value
-    leave require_function_context() check_match_return_type(value)
+    leave require_function_context()
+    leave check_match_return_type(value)
 
 [flow]
 function.default:

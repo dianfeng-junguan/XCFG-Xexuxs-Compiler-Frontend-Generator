@@ -73,14 +73,14 @@ pub enum NodeMemberType {
     TokenCategory,
 }
 pub struct NodeMember{
-    name:String,
-    pos_in_recipe:usize,
-    member_type:NodeMemberType
+    pub name:String,
+    pub pos_in_recipe:usize,
+    pub member_type:NodeMemberType
 }
 pub struct ParserRule{
-    name:String,
-    recipe:Vec<Term>,
-    struct_members:Vec<NodeMember>,
+    pub name:String,
+    pub recipe:Vec<Term>,
+    pub struct_members:Vec<NodeMember>,
     is_left_combined:bool
 }
 impl ParserRule {
@@ -220,9 +220,9 @@ impl Hash for ParserRule {
 }
 /// a set of rules to generate one type of node.
 pub struct ParserRuleSet{
-    name:String,
-    rules:Vec<ParserRule>,
-    has_left_combined:bool
+    pub name:String,
+    pub rules:Vec<ParserRule>,
+    pub has_left_combined:bool
 }
 impl ParserRuleSet {
     fn get_class_name(&self)->String {
