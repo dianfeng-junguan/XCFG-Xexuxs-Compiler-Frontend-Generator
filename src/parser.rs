@@ -113,8 +113,8 @@ impl ParserRule {
     ~{}() override{{
         {}
     }}
-    node_type_t get_kind(){{return NODE_{};}}
-}};",self.get_class_name(ruleset_name),ruleset_name,member_str,self.get_class_name(ruleset_name),member_disposal_str,ruleset_name.to_uppercase())
+    node_type_t get_kind() override {{return NODE_{}_{};}}
+}};",self.get_class_name(ruleset_name),ruleset_name,member_str,self.get_class_name(ruleset_name),member_disposal_str,ruleset_name.to_uppercase(),self.name.to_uppercase())
     }
     fn get_parser_name(&self,ruleset_name:&str)->String {
         format!("parse_{}",self.get_class_name(ruleset_name))
@@ -229,7 +229,7 @@ impl ParserRuleSet {
         format!("{}_t",self.name)
     }
     fn gen_class_code(&self)->String {
-        format!("class {}:ast_node_t{{
+        format!("class {}:public ast_node_t{{
     public:
     virtual node_type_t get_kind()=0;
     virtual ~{}() = default;
@@ -467,12 +467,10 @@ pub fn generate_parser_source(ruleset:Vec<ParserRuleSet>)->String{
         ruleset_classdefs.push(rs.gen_class_code()); 
         // generate specific classes
         for (index,rule) in rs.rules.iter().enumerate() {
-            let node_type = String::from("NODE_")+&rs.name.to_uppercase();
+            let node_type = format!("NODE_{}_{}",rs.name.to_uppercase(),rule.name.to_uppercase());
+            node_typeenum.push(node_type);
             // create the ruleclass
             rule_classdefs.push(rule.gen_class_code(&rs.name, &ruleset));
-            if !node_typeenum.contains(&node_type) {
-                node_typeenum.push(node_type);
-            }
         }
     }
 
@@ -509,18 +507,29 @@ parser_rule_t parser_rules[]={{
 {}
 }};
     ",rule_array_str);
+    let mut header_src=String::new();
     // concat the enum defs
     let mut nodetypeenum_str=String::new();
     node_typeenum.iter().for_each(|en| nodetypeenum_str.push_str(&(en.to_string()+",\n")));
-    src.push_str(&format!("
+    header_src.push_str(&format!("
 typedef enum{{
 {}
 }}node_type_t;
 ",nodetypeenum_str));
-    src.push_str(&ruleset_classdefs.join("\n"));
-    src.push('\n');
-    src.push_str(&rule_classdefs.join("\n"));
-    src.push('\n');
+    header_src.push_str("
+#pragma once
+#include \"lexer.h\"
+class ast_node_t{
+public:
+    virtual ~ast_node_t() = default;
+    virtual node_type_t get_kind() const = 0;
+};
+");
+    header_src.push_str(&ruleset_classdefs.join("\n"));
+    header_src.push('\n');
+    header_src.push_str(&rule_classdefs.join("\n"));
+    header_src.push('\n');
+
     src.push_str(&code_parser_func_decls.join("\n"));
     src.push('\n');
     src.push_str(&code_parser_funcs.join("\n"));
@@ -528,6 +537,9 @@ typedef enum{{
     src.push_str(&rule_structdef_str);
     src.push_str(&rule_array_str);
 
+    // generate header file
+    let mut header_file=File::create("parser.h").expect("failed to create parser.h");
+    header_file.write_all(header_src.as_bytes()).expect("failed to write parser.h");
     // put generated code into template
     let mut template_reader=File::open("parser_template.cpp").expect("failed to read parser template file");
     let mut template_code=String::new();

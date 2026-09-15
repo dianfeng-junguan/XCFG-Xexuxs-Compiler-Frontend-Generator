@@ -1,10 +1,7 @@
 #include <vector>
 #include <stdio.h>
 #include "lexer.h"
-class ast_node_t{
-public:
-    virtual ~ast_node_t() = default;
-};
+#include "parser.h"
 token_t* parse_token(tokenstream_t *tokenstream, token_type_t token_type){
     token_t *token=tokenstream->peek();
     if(token==NULL){

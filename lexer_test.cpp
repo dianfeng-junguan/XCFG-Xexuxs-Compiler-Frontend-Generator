@@ -7,7 +7,7 @@
 #include "lexer.h"
 
     
-#define LEXER_RULES_LEN 61
+#define LEXER_RULES_LEN 62
 lexer_rule_t lexer_rules[]={
     {.name=(const char*)"let",.pattern=(const char*)"\\blet\\b",.tok_type=TOKEN_LET},
 {.name=(const char*)"fn",.pattern=(const char*)"\\bfn\\b",.tok_type=TOKEN_FN},
@@ -16,6 +16,7 @@ lexer_rule_t lexer_rules[]={
 {.name=(const char*)"while",.pattern=(const char*)"\\bwhile\\b",.tok_type=TOKEN_WHILE},
 {.name=(const char*)"break",.pattern=(const char*)"\\bbreak\\b",.tok_type=TOKEN_BREAK},
 {.name=(const char*)"return",.pattern=(const char*)"\\breturn\\b",.tok_type=TOKEN_RETURN},
+{.name=(const char*)"continue",.pattern=(const char*)"\\bcontinue\\b",.tok_type=TOKEN_CONTINUE},
 {.name=(const char*)"include",.pattern=(const char*)"\\binclude\\b",.tok_type=TOKEN_INCLUDE},
 {.name=(const char*)"int",.pattern=(const char*)"\\bint\\b",.tok_type=TOKEN_INT},
 {.name=(const char*)"string_typekw",.pattern=(const char*)"\\bstring\\b",.tok_type=TOKEN_STRING_TYPEKW},

@@ -11,6 +11,7 @@ TOKEN_ELSE,
 TOKEN_WHILE,
 TOKEN_BREAK,
 TOKEN_RETURN,
+TOKEN_CONTINUE,
 TOKEN_INCLUDE,
 TOKEN_INT,
 TOKEN_STRING_TYPEKW,
@@ -68,7 +69,7 @@ TOKEN_WHITESPACE,
 
 }token_type_t;
     
-#define BELONGS_TO_CATEGORY_KEYWORDS(toktype) (toktype==TOKEN_LET||toktype==TOKEN_FN||toktype==TOKEN_IF||toktype==TOKEN_ELSE||toktype==TOKEN_WHILE||toktype==TOKEN_BREAK||toktype==TOKEN_RETURN||toktype==TOKEN_INCLUDE)
+#define BELONGS_TO_CATEGORY_KEYWORDS(toktype) (toktype==TOKEN_LET||toktype==TOKEN_FN||toktype==TOKEN_IF||toktype==TOKEN_ELSE||toktype==TOKEN_WHILE||toktype==TOKEN_BREAK||toktype==TOKEN_RETURN||toktype==TOKEN_CONTINUE||toktype==TOKEN_INCLUDE)
         
 #define BELONGS_TO_CATEGORY_TYPEKW(toktype) (toktype==TOKEN_INT||toktype==TOKEN_STRING_TYPEKW||toktype==TOKEN_CHAR_TYPEKW||toktype==TOKEN_VOID||toktype==TOKEN_STRUCT)
         
@@ -126,9 +127,8 @@ class tokenstream_t{
             ptrs.back()=last_ptr;
         }
         void reset(){
-            if(ptrs.size()>1){
-                ptrs.pop_back();
-            }
+            assert(ptrs.size()>=2);
+            ptrs.pop_back();
         }
         token_t *consume(){
             if(ptrs.back()>=tokens.size()){
