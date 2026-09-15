@@ -113,43 +113,52 @@ A semantic rule file is `sematic.rule`. Its basic form is:
 ```
 [pass]
 ruleset.rule:
-    enter check_before_children(arguments)
-    children member1 member2
-    leave check_after_children(arguments)
+    action_before_child(arguments)
+    visit(member1)
+    visit(member2)
+    action_after_children(arguments)
 ```
 
 `[pass]` selects the semantic pass. `ruleset.rule` identifies an AST node, for example `expr.add` refers to the `add` rule under `$expr` in `parser.rule`.
 
-The three traversal directives are explicit:
+Every indented step is executed once, from top to bottom. There are two kinds of steps:
 
-* `enter` runs when the visitor enters the node. Use it to create scopes, establish context, or predeclare symbols.
-* `children` recursively visits the listed AST members. The members are the names after `@` in `parser.rule`.
-* `leave` runs after the listed children have been visited. Use it for checks that depend on child results, such as type checking and control-flow aggregation.
+* `visit(member)` recursively applies the current pass to one AST child. `visit` takes exactly one argument. To visit several children, write one `visit` line for each child in the required order.
+* `action(member1,member2,...)` calls a user-supplied semantic action. An action may take zero or more arguments, and every argument must be the name of a direct member of the current parser rule (the name after `@` in `parser.rule`).
+
+The position of an action relative to `visit` determines whether it runs before, between, or after child visits. This replaces separate `enter`, `children`, and `leave` directives and also permits more precise ordering, such as entering a scope after checking a condition but before visiting a body.
+
+If a node has no explicit rule in a pass, the generator automatically visits all of its AST children in parser-rule order. Once a node has an explicit rule, that automatic traversal is replaced completely: every child needed by that pass must appear in an explicit `visit(child)` step. Token members must not be passed to `visit`; they may be passed to ordinary actions.
 
 For example:
 
 ```
 [resolve]
 function.default:
-    enter enter_function_scope()
-    enter declare_parameters(args)
-    children return_type stmts
-    leave leave_scope()
+    enter_function_scope()
+    declare_parameters(args)
+    visit(return_type)
+    visit(stmts)
+    leave_scope()
 
 [typecheck]
 expr.add:
-    children left right
-    leave check_addable(left,right) infer_binary_result_type(left,right)
+    visit(left)
+    visit(right)
+    check_addable(left,right)
+    infer_binary_result_type(left,right)
 
 [flow]
 function.default:
-    children stmts
-    leave require_all_paths_return(stmts)
+    enter_function_scope()
+    visit(stmts)
+    require_all_paths_return(stmts)
+    leave_scope()
 ```
 
-The generator can collect the action names and generate their declarations or empty definitions. Arguments such as `left` and `right` document which node members an action uses; the generated implementation should also receive the current node and a semantic context containing scopes, types and diagnostics.
+The generator collects action names and generates their declarations and empty definitions. For an action written as `check_addable(left,right)`, the generated C++ function receives the current `ast_node_t*`, the typed values of `left` and `right`, and the `sematic_context_t*`, in that order. Returning `false` stops the current pass immediately. `visit` is built in and is not emitted as a user action.
 
-The usual dependency order is `predeclare -> resolve -> typecheck -> flow`. Within one node, scope/context actions normally run in `enter`, child-dependent checks in `leave`.
+Passes run in file order; the usual dependency order is `predeclare -> resolve -> typecheck -> flow`. Scope/context actions normally precede the children whose interpretation they affect, while checks that consume inferred child types or flow summaries follow those visits.
 
 #### Symbol Table 
 

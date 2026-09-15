@@ -795,7 +795,7 @@ composed_type_t* parse_composed_type_t(tokenstream_t *tokenstream){
     composed_type_t* node = parse_composed_type_t_start(tokenstream);
     if(!node) {tokenstream->reset();return nullptr;}
     while(1){
-        composed_type_t* next=nullptrptr;
+        composed_type_t* next=nullptr;
         
 	
 	if((next=parse_composed_type_ptr_t_nostart(node,tokenstream))){node=next;continue;}

@@ -65,7 +65,7 @@ impl Display for Term {
         )
     }
 }
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub enum NodeMemberType {
     Node,
     /// a pointer type to the token.
@@ -113,7 +113,7 @@ impl ParserRule {
     ~{}() override{{
         {}
     }}
-    node_type_t get_kind() override {{return NODE_{}_{};}}
+    node_type_t get_kind() const override {{return NODE_{}_{};}}
 }};",self.get_class_name(ruleset_name),ruleset_name,member_str,self.get_class_name(ruleset_name),member_disposal_str,ruleset_name.to_uppercase(),self.name.to_uppercase())
     }
     fn get_parser_name(&self,ruleset_name:&str)->String {
@@ -231,7 +231,7 @@ impl ParserRuleSet {
     fn gen_class_code(&self)->String {
         format!("class {}:public ast_node_t{{
     public:
-    virtual node_type_t get_kind()=0;
+    virtual node_type_t get_kind() const override;
     virtual ~{}() = default;
 }};",self.get_class_name(),self.get_class_name())
     }
@@ -266,7 +266,7 @@ impl ParserRuleSet {
     {rs}* node = parse_{rs}_start(tokenstream);
     if(!node) {tokenstream->reset();return nullptr;}
     while(1){
-        {rs}* next=nullptrptr;
+        {rs}* next=nullptr;
         {ifs}
     }
     tokenstream->end_parsing();

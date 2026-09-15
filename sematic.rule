@@ -1,313 +1,522 @@
 [predeclare]
 declaration.fn:
-    enter predeclare_function(name,args,return_type)
+    predeclare_function(name,args,return_type)
 declaration.struct:
-    enter predeclare_struct(name)
+    predeclare_struct(name)
 function.default:
-    enter predeclare_function(name,args,return_type)
+    predeclare_function(name,args,return_type)
+    enter_function_scope()
+    predeclare_parameters(args)
+    visit(stmts)
+    leave_scope()
 struct.default:
-    enter predeclare_struct(name)
+    predeclare_struct(name)
+    enter_struct_scope()
+    predeclare_members(members)
+    leave_scope()
+if.default:
+    enter_block_scope()
+    visit(statements)
+    leave_scope()
+    visit(rest_block)
+while.default:
+    enter_loop_scope()
+    visit(statements)
+    leave_scope()
+else.default:
+    enter_block_scope()
+    visit(statements)
+    leave_scope()
+elseif.default:
+    enter_block_scope()
+    visit(statements)
+    leave_scope()
 
 [resolve]
 function.default:
-    enter enter_function_scope()
-    enter declare_parameters(args)
-    children return_type stmts
-    leave leave_scope()
+    enter_function_scope()
+    declare_parameters(args)
+    visit(return_type)
+    visit(stmts)
+    leave_scope()
 struct.default:
-    enter enter_struct_scope()
-    enter declare_members(members)
-    children members
-    leave leave_scope()
+    enter_struct_scope()
+    declare_members(members)
+    visit(members)
+    leave_scope()
 definition.deftype:
-    children def_type value
-    leave declare_variable(name,def_type)
+    visit(def_type)
+    visit(value)
+    declare_variable(name,def_type)
 definition.defntype:
-    children value
-    leave declare_inferred_variable(name,value)
+    visit(value)
+    declare_inferred_variable(name,value)
 declaration.varntype:
-    leave declare_variable(name)
+    declare_variable(name)
 declaration.var:
-    children def_type
-    leave declare_variable(name,def_type)
+    visit(def_type)
+    declare_variable(name,def_type)
 declaration.fn:
-    children args return_type
-    leave resolve_function_signature(name,args,return_type)
+    visit(args)
+    visit(return_type)
+    resolve_function_signature(name,args,return_type)
 declaration.struct:
-    children members
-    leave resolve_struct_signature(name,members)
+    visit(members)
+    resolve_struct_signature(name,members)
 factor.id:
-    leave resolve_symbol(value)
+    resolve_symbol(value)
 glued_factor.def:
-    children left
-    leave resolve_member(left,right)
+    visit(left)
+    resolve_member(left,right)
 glued_factor.call:
-    children left args
-    leave resolve_arguments(args)
+    visit(left)
+    visit(args)
+    resolve_arguments(args)
 lvalue.prop:
-    children left
-    leave resolve_member(left,right)
+    visit(left)
+    resolve_member(left,right)
 lvalue_noproperty.id:
-    leave resolve_symbol(id)
+    resolve_symbol(id)
 if.default:
-    enter enter_block_scope()
-    children condition statements rest_block
-    leave leave_scope()
+    visit(condition)
+    enter_block_scope()
+    visit(statements)
+    leave_scope()
+    visit(rest_block)
 while.default:
-    enter enter_loop_scope()
-    children condition statements
-    leave leave_scope()
+    visit(condition)
+    enter_loop_scope()
+    visit(statements)
+    leave_scope()
 else.default:
-    enter enter_block_scope()
-    children statements
-    leave leave_scope()
+    enter_block_scope()
+    visit(statements)
+    leave_scope()
 elseif.default:
-    enter enter_block_scope()
-    children condition statements
-    leave leave_scope()
+    visit(condition)
+    enter_block_scope()
+    visit(statements)
+    leave_scope()
 statement.definition:
-    children def
+    visit(def)
 statement.expr:
-    children expr
+    visit(expr)
 statement.declaration:
-    children decl_stmt
+    visit(decl_stmt)
 statement.if:
-    children if_stmt
+    visit(if_stmt)
 statement.while:
-    children while_stmt
+    visit(while_stmt)
 statement.return_sth:
-    children value
+    visit(value)
 
 [typecheck]
+function.default:
+    enter_function_context(name,return_type)
+    visit(args)
+    visit(return_type)
+    check_function_type(args,return_type)
+    visit(stmts)
+    leave_function_context()
+struct.default:
+    enter_struct_context(name)
+    visit(members)
+    leave_struct_context()
 definition.deftype:
-    children def_type value
-    leave check_assignable(def_type,value)
-    leave mark_initialized(name)
+    visit(def_type)
+    require_valid_variable_type(def_type)
+    visit(value)
+    check_assignable(def_type,value)
+    mark_initialized(name)
 definition.defntype:
-    children value
-    leave infer_variable_type(name,value)
-    leave mark_initialized(name)
+    visit(value)
+    infer_variable_type(name,value)
+    mark_initialized(name)
+declaration.var:
+    visit(def_type)
+    require_valid_variable_type(def_type)
+declaration.fn:
+    visit(args)
+    visit(return_type)
+    check_function_type(args,return_type)
+declaration.struct:
+    visit(members)
+arglist_nonempty.singarg:
+    visit(arg_type)
+    require_valid_parameter_type(arg_type)
+arglist_nonempty.multiarg:
+    visit(arg_type)
+    require_valid_parameter_type(arg_type)
+    visit(other_args)
+structmembers.singmem:
+    visit(def_type)
+    require_valid_member_type(def_type)
+structmembers.multimem:
+    visit(def_type)
+    require_valid_member_type(def_type)
+    visit(other_members)
 assign_expr.assign:
-    children left right
-    leave require_modifiable_lvalue(left)
-    leave check_assignable(left,right)
+    visit(left)
+    visit(right)
+    require_modifiable_lvalue(left)
+    check_assignable(left,right)
+    mark_lvalue_initialized(left)
+    propagate_type(left)
 assign_expr.plus_assign:
-    children left right
-    leave require_modifiable_lvalue(left)
-    leave check_addable(left,right)
+    visit(left)
+    visit(right)
+    require_modifiable_lvalue(left)
+    require_initialized(left)
+    check_addable(left,right)
+    propagate_type(left)
 assign_expr.minus_assign:
-    children left right
-    leave require_modifiable_lvalue(left)
-    leave check_minusable(left,right)
+    visit(left)
+    visit(right)
+    require_modifiable_lvalue(left)
+    require_initialized(left)
+    check_minusable(left,right)
+    propagate_type(left)
 assign_expr.mul_assign:
-    children left right
-    leave require_modifiable_lvalue(left)
-    leave check_mulable(left,right)
+    visit(left)
+    visit(right)
+    require_modifiable_lvalue(left)
+    require_initialized(left)
+    check_mulable(left,right)
+    propagate_type(left)
 assign_expr.div_assign:
-    children left right
-    leave require_modifiable_lvalue(left)
-    leave check_divable(left,right)
+    visit(left)
+    visit(right)
+    require_modifiable_lvalue(left)
+    require_initialized(left)
+    check_divable(left,right)
+    propagate_type(left)
 assign_expr.mod_assign:
-    children left right
-    leave require_modifiable_lvalue(left)
-    leave check_modable(left,right)
+    visit(left)
+    visit(right)
+    require_modifiable_lvalue(left)
+    require_initialized(left)
+    check_modable(left,right)
+    propagate_type(left)
 assign_expr.bitand_assign:
-    children left right
-    leave require_modifiable_lvalue(left)
-    leave check_bitandable(left,right)
+    visit(left)
+    visit(right)
+    require_modifiable_lvalue(left)
+    require_initialized(left)
+    check_bitandable(left,right)
+    propagate_type(left)
 assign_expr.bitor_assign:
-    children left right
-    leave require_modifiable_lvalue(left)
-    leave check_bitorable(left,right)
+    visit(left)
+    visit(right)
+    require_modifiable_lvalue(left)
+    require_initialized(left)
+    check_bitorable(left,right)
+    propagate_type(left)
 assign_expr.shiftleft_assign:
-    children left right
-    leave require_modifiable_lvalue(left)
-    leave check_shiftleftable(left,right)
+    visit(left)
+    visit(right)
+    require_modifiable_lvalue(left)
+    require_initialized(left)
+    check_shiftleftable(left,right)
+    propagate_type(left)
 assign_expr.shiftright_assign:
-    children left right
-    leave require_modifiable_lvalue(left)
-    leave check_shiftrightable(left,right)
+    visit(left)
+    visit(right)
+    require_modifiable_lvalue(left)
+    require_initialized(left)
+    check_shiftrightable(left,right)
+    propagate_type(left)
+assign_expr.logic_expr:
+    visit(expr)
+    propagate_type(expr)
 logic_expr_eq.eq:
-    children left right
-    leave check_equalable(left,right)
-    leave set_boolean_type()
+    visit(left)
+    visit(right)
+    check_equalable(left,right)
+    set_boolean_type()
 logic_expr_eq.neq:
-    children left right
-    leave check_nequalable(left,right)
-    leave set_boolean_type()
+    visit(left)
+    visit(right)
+    check_nequalable(left,right)
+    set_boolean_type()
 logic_expr_eq.gt:
-    children left right
-    leave check_comparable(left,right)
-    leave set_boolean_type()
+    visit(left)
+    visit(right)
+    check_comparable(left,right)
+    set_boolean_type()
 logic_expr_eq.lt:
-    children left right
-    leave check_comparable(left,right)
-    leave set_boolean_type()
+    visit(left)
+    visit(right)
+    check_comparable(left,right)
+    set_boolean_type()
 logic_expr_eq.ge:
-    children left right
-    leave check_comparable(left,right)
-    leave set_boolean_type()
+    visit(left)
+    visit(right)
+    check_comparable(left,right)
+    set_boolean_type()
 logic_expr_eq.le:
-    children left right
-    leave check_comparable(left,right)
-    leave set_boolean_type()
+    visit(left)
+    visit(right)
+    check_comparable(left,right)
+    set_boolean_type()
 logic_expr_or.or:
-    children left right
-    leave require_boolean(left)
-    leave require_boolean(right)
-    leave set_boolean_type()
+    visit(left)
+    visit(right)
+    require_boolean(left)
+    require_boolean(right)
+    set_boolean_type()
 logic_expr_and.and:
-    children left right
-    leave require_boolean(left)
-    leave require_boolean(right)
-    leave set_boolean_type()
+    visit(left)
+    visit(right)
+    require_boolean(left)
+    require_boolean(right)
+    set_boolean_type()
+logic_expr_and.none:
+    visit(expr)
+    propagate_type(expr)
+logic_expr_or.none:
+    visit(expr)
+    propagate_type(expr)
+logic_expr_eq.none:
+    visit(expr)
+    propagate_type(expr)
 expr.add:
-    children left right
-    leave check_addable(left,right)
-    leave infer_binary_result_type(left,right)
+    visit(left)
+    visit(right)
+    check_addable(left,right)
+    infer_binary_result_type(left,right)
 expr.sub:
-    children left right
-    leave check_minusable(left,right)
-    leave infer_binary_result_type(left,right)
+    visit(left)
+    visit(right)
+    check_minusable(left,right)
+    infer_binary_result_type(left,right)
 term.mul:
-    children left right
-    leave check_mulable(left,right)
-    leave infer_binary_result_type(left,right)
+    visit(left)
+    visit(right)
+    check_mulable(left,right)
+    infer_binary_result_type(left,right)
 term.div:
-    children left right
-    leave check_divable(left,right)
-    leave infer_binary_result_type(left,right)
+    visit(left)
+    visit(right)
+    check_divable(left,right)
+    infer_binary_result_type(left,right)
 term.mod:
-    children left right
-    leave check_modable(left,right)
-    leave infer_binary_result_type(left,right)
+    visit(left)
+    visit(right)
+    check_modable(left,right)
+    infer_binary_result_type(left,right)
 term.bitand:
-    children left right
-    leave check_bitandable(left,right)
-    leave infer_binary_result_type(left,right)
+    visit(left)
+    visit(right)
+    check_bitandable(left,right)
+    infer_binary_result_type(left,right)
 term.bitor:
-    children left right
-    leave check_bitorable(left,right)
-    leave infer_binary_result_type(left,right)
+    visit(left)
+    visit(right)
+    check_bitorable(left,right)
+    infer_binary_result_type(left,right)
 term.shiftleft:
-    children left right
-    leave check_shiftleftable(left,right)
-    leave infer_binary_result_type(left,right)
+    visit(left)
+    visit(right)
+    check_shiftleftable(left,right)
+    infer_binary_result_type(left,right)
 term.shiftright:
-    children left right
-    leave check_shiftrightable(left,right)
-    leave infer_binary_result_type(left,right)
+    visit(left)
+    visit(right)
+    check_shiftrightable(left,right)
+    infer_binary_result_type(left,right)
+term.factor:
+    visit(expr)
+    propagate_type(expr)
 power_factor.pow:
-    children left right
-    leave require_numeric(left)
-    leave require_numeric(right)
-    leave infer_binary_result_type(left,right)
+    visit(left)
+    visit(right)
+    require_numeric(left)
+    require_numeric(right)
+    infer_binary_result_type(left,right)
 single_op_factor.bitnot:
-    children expr
-    leave require_numeric(expr)
-    leave propagate_type(expr)
+    visit(expr)
+    require_numeric(expr)
+    propagate_type(expr)
 single_op_factor.neg:
-    children expr
-    leave require_numeric(expr)
-    leave propagate_type(expr)
+    visit(expr)
+    require_numeric(expr)
+    propagate_type(expr)
 single_op_factor.ref:
-    children expr
-    leave require_lvalue(expr)
-    leave infer_pointer_type(expr)
+    visit(expr)
+    require_lvalue(expr)
+    infer_pointer_type(expr)
 single_op_factor.deref:
-    children expr
-    leave require_pointer(expr)
-    leave infer_pointee_type(expr)
+    visit(expr)
+    require_pointer(expr)
+    infer_pointee_type(expr)
 single_op_factor.not:
-    children expr
-    leave require_boolean(expr)
-    leave set_boolean_type()
+    visit(expr)
+    require_boolean(expr)
+    set_boolean_type()
 lvalue_noproperty.deref:
-    children derefee
-    leave require_pointer(derefee)
-    leave infer_pointee_type(derefee)
+    visit(derefee)
+    require_initialized(derefee)
+    require_pointer(derefee)
+    infer_pointee_type(derefee)
+lvalue_noproperty.parened:
+    visit(expr)
+    require_lvalue(expr)
+    propagate_type(expr)
+lvalue_noproperty.id:
+    propagate_symbol_type(id)
+lvalue.noprop:
+    visit(expr)
+    propagate_type(expr)
 glued_factor.call:
-    children left args
-    leave require_callable(left)
-    leave check_argument_count(left,args)
-    leave check_argument_types(left,args)
-    leave infer_call_result_type(left)
+    visit(left)
+    visit(args)
+    require_callable(left)
+    check_argument_count(left,args)
+    check_argument_types(left,args)
+    infer_call_result_type(left)
 glued_factor.def:
-    children left
-    leave check_member_access(left,right)
-    leave propagate_member_type(left,right)
+    visit(left)
+    require_initialized(left)
+    check_member_access(left,right)
+    propagate_member_type(left,right)
 lvalue.prop:
-    children left
-    leave check_member_access(left,right)
-    leave propagate_member_type(left,right)
+    visit(left)
+    require_initialized(left)
+    check_member_access(left,right)
+    propagate_member_type(left,right)
 factor.id:
-    leave propagate_symbol_type(value)
+    propagate_symbol_type(value)
+    require_initialized(value)
 factor.num:
-    leave set_number_type(value)
+    set_number_type(value)
 factor.ch:
-    leave set_char_type(value)
+    set_char_type(value)
 factor.str:
-    leave set_string_type(value)
+    set_string_type(value)
 glued_factor.value:
-    children value
-    leave propagate_type(value)
+    visit(value)
+    propagate_type(value)
 glued_factor.paren:
-    children expr
-    leave propagate_type(expr)
+    visit(expr)
+    propagate_type(expr)
 expr.term:
-    children expr
-    leave propagate_type(expr)
+    visit(expr)
+    propagate_type(expr)
 power_factor.none:
-    children expr
-    leave propagate_type(expr)
+    visit(expr)
+    propagate_type(expr)
 single_op_factor.none:
-    children expr
-    leave propagate_type(expr)
+    visit(expr)
+    propagate_type(expr)
 ultimate_expr.def:
-    children expr
-    leave propagate_type(expr)
+    visit(expr)
+    propagate_type(expr)
 composed_type.paren:
-    children inner_type
-    leave check_valid_type(inner_type)
+    visit(inner_type)
+    check_valid_type(inner_type)
+composed_type.raw_type:
+    resolve_type_name(inner_type)
+    set_named_type(inner_type)
 composed_type.ptr:
-    children pointer_type
-    leave check_valid_type(pointer_type)
+    visit(pointer_type)
+    check_valid_type(pointer_type)
 composed_type.nsizedarr:
-    children element_type
-    leave check_valid_type(element_type)
+    visit(element_type)
+    check_valid_type(element_type)
 composed_type.sizedarr:
-    children element_type array_size
-    leave check_valid_type(element_type)
-    leave require_integer(array_size)
-    leave require_constant_expression(array_size)
-    leave require_positive(array_size)
+    visit(element_type)
+    visit(array_size)
+    check_valid_type(element_type)
+    require_integer(array_size)
+    require_constant_expression(array_size)
+    require_positive(array_size)
 statement.return_empty:
-    leave require_function_context()
-    leave check_empty_return_type()
+    require_function_context()
+    check_empty_return_type()
 statement.return_sth:
-    children value
-    leave require_function_context()
-    leave check_match_return_type(value)
+    visit(value)
+    require_function_context()
+    check_match_return_type(value)
+if.default:
+    visit(condition)
+    require_boolean(condition)
+    visit(statements)
+    visit(rest_block)
+elseif.default:
+    visit(condition)
+    require_boolean(condition)
+    visit(statements)
+while.default:
+    visit(condition)
+    require_boolean(condition)
+    visit(statements)
 
 [flow]
 function.default:
-    children stmts
-    leave require_all_paths_return(stmts)
+    enter_function_scope()
+    visit(stmts)
+    require_all_paths_return(stmts)
+    leave_scope()
 if.default:
-    children condition statements rest_block
-    leave check_control_flow(condition,statements,rest_block)
+    visit(condition)
+    visit(statements)
+    visit(rest_block)
+    check_control_flow(condition,statements,rest_block)
 while.default:
-    children condition statements
-    leave check_control_flow(condition,statements)
-    leave leave_loop_scope()
+    enter_loop_scope()
+    visit(condition)
+    visit(statements)
+    check_control_flow(condition,statements)
+    leave_loop_scope()
 statement.break:
-    leave require_loop_context()
+    require_loop_context()
+    set_terminating_flow()
 statement.continue:
-    leave require_loop_context()
+    require_loop_context()
+    set_terminating_flow()
 statement.return_empty:
-    leave require_function_context()
+    require_function_context()
+    set_return_flow()
 statement.return_sth:
-    leave require_function_context()
+    require_function_context()
+    set_return_flow()
+statement.expr:
+    visit(expr)
+    set_fallthrough_flow()
+statement.definition:
+    visit(def)
+    set_fallthrough_flow()
+statement.declaration:
+    visit(decl_stmt)
+    set_fallthrough_flow()
+statement.if:
+    visit(if_stmt)
+    propagate_flow(if_stmt)
+statement.while:
+    visit(while_stmt)
+    propagate_flow(while_stmt)
+statements.stmt:
+    visit(stmt)
+    propagate_flow(stmt)
 statements.multistmt:
-    children stmt other_stmts
-    leave check_unreachable(stmt,other_stmts)
+    visit(stmt)
+    visit(other_stmts)
+    check_unreachable(stmt,other_stmts)
+    combine_sequential_flow(stmt,other_stmts)
+statements.empty:
+    set_fallthrough_flow()
+else.default:
+    visit(statements)
+    propagate_flow(statements)
+elseif.default:
+    visit(statements)
+    propagate_flow(statements)
+elseif_else.onlyelse:
+    visit(else_block)
+    propagate_flow(else_block)
+elseif_else.chain:
+    visit(elseif_block)
+    visit(rest_block)
+    combine_branch_flow(elseif_block,rest_block)
+elseif_else.empty:
+    set_fallthrough_flow()

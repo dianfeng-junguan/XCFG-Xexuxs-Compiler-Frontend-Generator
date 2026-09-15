@@ -110,154 +110,154 @@ public:
     virtual ~ast_node_t() = default;
     virtual node_type_t get_kind() const = 0;
 };
-class factor_t:ast_node_t{
+class factor_t:public ast_node_t{
     public:
-    virtual node_type_t get_kind()=0;
+    virtual node_type_t get_kind() const override;
     virtual ~factor_t() = default;
 };
-class glued_factor_t:ast_node_t{
+class glued_factor_t:public ast_node_t{
     public:
-    virtual node_type_t get_kind()=0;
+    virtual node_type_t get_kind() const override;
     virtual ~glued_factor_t() = default;
 };
-class single_op_factor_t:ast_node_t{
+class single_op_factor_t:public ast_node_t{
     public:
-    virtual node_type_t get_kind()=0;
+    virtual node_type_t get_kind() const override;
     virtual ~single_op_factor_t() = default;
 };
-class power_factor_t:ast_node_t{
+class power_factor_t:public ast_node_t{
     public:
-    virtual node_type_t get_kind()=0;
+    virtual node_type_t get_kind() const override;
     virtual ~power_factor_t() = default;
 };
-class term_t:ast_node_t{
+class term_t:public ast_node_t{
     public:
-    virtual node_type_t get_kind()=0;
+    virtual node_type_t get_kind() const override;
     virtual ~term_t() = default;
 };
-class expr_t:ast_node_t{
+class expr_t:public ast_node_t{
     public:
-    virtual node_type_t get_kind()=0;
+    virtual node_type_t get_kind() const override;
     virtual ~expr_t() = default;
 };
-class logic_expr_and_t:ast_node_t{
+class logic_expr_and_t:public ast_node_t{
     public:
-    virtual node_type_t get_kind()=0;
+    virtual node_type_t get_kind() const override;
     virtual ~logic_expr_and_t() = default;
 };
-class logic_expr_or_t:ast_node_t{
+class logic_expr_or_t:public ast_node_t{
     public:
-    virtual node_type_t get_kind()=0;
+    virtual node_type_t get_kind() const override;
     virtual ~logic_expr_or_t() = default;
 };
-class logic_expr_eq_t:ast_node_t{
+class logic_expr_eq_t:public ast_node_t{
     public:
-    virtual node_type_t get_kind()=0;
+    virtual node_type_t get_kind() const override;
     virtual ~logic_expr_eq_t() = default;
 };
-class assign_expr_t:ast_node_t{
+class assign_expr_t:public ast_node_t{
     public:
-    virtual node_type_t get_kind()=0;
+    virtual node_type_t get_kind() const override;
     virtual ~assign_expr_t() = default;
 };
-class ultimate_expr_t:ast_node_t{
+class ultimate_expr_t:public ast_node_t{
     public:
-    virtual node_type_t get_kind()=0;
+    virtual node_type_t get_kind() const override;
     virtual ~ultimate_expr_t() = default;
 };
-class lvalue_noproperty_t:ast_node_t{
+class lvalue_noproperty_t:public ast_node_t{
     public:
-    virtual node_type_t get_kind()=0;
+    virtual node_type_t get_kind() const override;
     virtual ~lvalue_noproperty_t() = default;
 };
-class lvalue_t:ast_node_t{
+class lvalue_t:public ast_node_t{
     public:
-    virtual node_type_t get_kind()=0;
+    virtual node_type_t get_kind() const override;
     virtual ~lvalue_t() = default;
 };
-class composed_type_t:ast_node_t{
+class composed_type_t:public ast_node_t{
     public:
-    virtual node_type_t get_kind()=0;
+    virtual node_type_t get_kind() const override;
     virtual ~composed_type_t() = default;
 };
-class definition_t:ast_node_t{
+class definition_t:public ast_node_t{
     public:
-    virtual node_type_t get_kind()=0;
+    virtual node_type_t get_kind() const override;
     virtual ~definition_t() = default;
 };
-class else_t:ast_node_t{
+class else_t:public ast_node_t{
     public:
-    virtual node_type_t get_kind()=0;
+    virtual node_type_t get_kind() const override;
     virtual ~else_t() = default;
 };
-class elseif_t:ast_node_t{
+class elseif_t:public ast_node_t{
     public:
-    virtual node_type_t get_kind()=0;
+    virtual node_type_t get_kind() const override;
     virtual ~elseif_t() = default;
 };
-class elseif_else_t:ast_node_t{
+class elseif_else_t:public ast_node_t{
     public:
-    virtual node_type_t get_kind()=0;
+    virtual node_type_t get_kind() const override;
     virtual ~elseif_else_t() = default;
 };
-class if_t:ast_node_t{
+class if_t:public ast_node_t{
     public:
-    virtual node_type_t get_kind()=0;
+    virtual node_type_t get_kind() const override;
     virtual ~if_t() = default;
 };
-class while_t:ast_node_t{
+class while_t:public ast_node_t{
     public:
-    virtual node_type_t get_kind()=0;
+    virtual node_type_t get_kind() const override;
     virtual ~while_t() = default;
 };
-class structmembers_t:ast_node_t{
+class structmembers_t:public ast_node_t{
     public:
-    virtual node_type_t get_kind()=0;
+    virtual node_type_t get_kind() const override;
     virtual ~structmembers_t() = default;
 };
-class struct_t:ast_node_t{
+class struct_t:public ast_node_t{
     public:
-    virtual node_type_t get_kind()=0;
+    virtual node_type_t get_kind() const override;
     virtual ~struct_t() = default;
 };
-class declaration_t:ast_node_t{
+class declaration_t:public ast_node_t{
     public:
-    virtual node_type_t get_kind()=0;
+    virtual node_type_t get_kind() const override;
     virtual ~declaration_t() = default;
 };
-class statement_t:ast_node_t{
+class statement_t:public ast_node_t{
     public:
-    virtual node_type_t get_kind()=0;
+    virtual node_type_t get_kind() const override;
     virtual ~statement_t() = default;
 };
-class statements_t:ast_node_t{
+class statements_t:public ast_node_t{
     public:
-    virtual node_type_t get_kind()=0;
+    virtual node_type_t get_kind() const override;
     virtual ~statements_t() = default;
 };
-class func_returntype_t:ast_node_t{
+class func_returntype_t:public ast_node_t{
     public:
-    virtual node_type_t get_kind()=0;
+    virtual node_type_t get_kind() const override;
     virtual ~func_returntype_t() = default;
 };
-class arglist_nonempty_t:ast_node_t{
+class arglist_nonempty_t:public ast_node_t{
     public:
-    virtual node_type_t get_kind()=0;
+    virtual node_type_t get_kind() const override;
     virtual ~arglist_nonempty_t() = default;
 };
-class arglist_t:ast_node_t{
+class arglist_t:public ast_node_t{
     public:
-    virtual node_type_t get_kind()=0;
+    virtual node_type_t get_kind() const override;
     virtual ~arglist_t() = default;
 };
-class function_t:ast_node_t{
+class function_t:public ast_node_t{
     public:
-    virtual node_type_t get_kind()=0;
+    virtual node_type_t get_kind() const override;
     virtual ~function_t() = default;
 };
-class top_statement_t:ast_node_t{
+class top_statement_t:public ast_node_t{
     public:
-    virtual node_type_t get_kind()=0;
+    virtual node_type_t get_kind() const override;
     virtual ~top_statement_t() = default;
 };
 class factor_id_t:public factor_t{
@@ -266,7 +266,7 @@ class factor_id_t:public factor_t{
     ~factor_id_t() override{
         
     }
-    node_type_t get_kind() override {return NODE_FACTOR_ID;}
+    node_type_t get_kind() const override {return NODE_FACTOR_ID;}
 };
 class factor_num_t:public factor_t{
     public:
@@ -274,7 +274,7 @@ class factor_num_t:public factor_t{
     ~factor_num_t() override{
         
     }
-    node_type_t get_kind() override {return NODE_FACTOR_NUM;}
+    node_type_t get_kind() const override {return NODE_FACTOR_NUM;}
 };
 class factor_ch_t:public factor_t{
     public:
@@ -282,7 +282,7 @@ class factor_ch_t:public factor_t{
     ~factor_ch_t() override{
         
     }
-    node_type_t get_kind() override {return NODE_FACTOR_CH;}
+    node_type_t get_kind() const override {return NODE_FACTOR_CH;}
 };
 class factor_str_t:public factor_t{
     public:
@@ -290,7 +290,7 @@ class factor_str_t:public factor_t{
     ~factor_str_t() override{
         
     }
-    node_type_t get_kind() override {return NODE_FACTOR_STR;}
+    node_type_t get_kind() const override {return NODE_FACTOR_STR;}
 };
 class glued_factor_paren_t:public glued_factor_t{
     public:
@@ -299,7 +299,7 @@ class glued_factor_paren_t:public glued_factor_t{
         delete expr;
 
     }
-    node_type_t get_kind() override {return NODE_GLUED_FACTOR_PAREN;}
+    node_type_t get_kind() const override {return NODE_GLUED_FACTOR_PAREN;}
 };
 class glued_factor_def_t:public glued_factor_t{
     public:
@@ -309,7 +309,7 @@ class glued_factor_def_t:public glued_factor_t{
         delete left;
 
     }
-    node_type_t get_kind() override {return NODE_GLUED_FACTOR_DEF;}
+    node_type_t get_kind() const override {return NODE_GLUED_FACTOR_DEF;}
 };
 class glued_factor_value_t:public glued_factor_t{
     public:
@@ -318,7 +318,7 @@ class glued_factor_value_t:public glued_factor_t{
         delete value;
 
     }
-    node_type_t get_kind() override {return NODE_GLUED_FACTOR_VALUE;}
+    node_type_t get_kind() const override {return NODE_GLUED_FACTOR_VALUE;}
 };
 class glued_factor_call_t:public glued_factor_t{
     public:
@@ -329,7 +329,7 @@ class glued_factor_call_t:public glued_factor_t{
 delete args;
 
     }
-    node_type_t get_kind() override {return NODE_GLUED_FACTOR_CALL;}
+    node_type_t get_kind() const override {return NODE_GLUED_FACTOR_CALL;}
 };
 class single_op_factor_bitnot_t:public single_op_factor_t{
     public:
@@ -338,7 +338,7 @@ class single_op_factor_bitnot_t:public single_op_factor_t{
         delete expr;
 
     }
-    node_type_t get_kind() override {return NODE_SINGLE_OP_FACTOR_BITNOT;}
+    node_type_t get_kind() const override {return NODE_SINGLE_OP_FACTOR_BITNOT;}
 };
 class single_op_factor_neg_t:public single_op_factor_t{
     public:
@@ -347,7 +347,7 @@ class single_op_factor_neg_t:public single_op_factor_t{
         delete expr;
 
     }
-    node_type_t get_kind() override {return NODE_SINGLE_OP_FACTOR_NEG;}
+    node_type_t get_kind() const override {return NODE_SINGLE_OP_FACTOR_NEG;}
 };
 class single_op_factor_ref_t:public single_op_factor_t{
     public:
@@ -356,7 +356,7 @@ class single_op_factor_ref_t:public single_op_factor_t{
         delete expr;
 
     }
-    node_type_t get_kind() override {return NODE_SINGLE_OP_FACTOR_REF;}
+    node_type_t get_kind() const override {return NODE_SINGLE_OP_FACTOR_REF;}
 };
 class single_op_factor_deref_t:public single_op_factor_t{
     public:
@@ -365,7 +365,7 @@ class single_op_factor_deref_t:public single_op_factor_t{
         delete expr;
 
     }
-    node_type_t get_kind() override {return NODE_SINGLE_OP_FACTOR_DEREF;}
+    node_type_t get_kind() const override {return NODE_SINGLE_OP_FACTOR_DEREF;}
 };
 class single_op_factor_not_t:public single_op_factor_t{
     public:
@@ -374,7 +374,7 @@ class single_op_factor_not_t:public single_op_factor_t{
         delete expr;
 
     }
-    node_type_t get_kind() override {return NODE_SINGLE_OP_FACTOR_NOT;}
+    node_type_t get_kind() const override {return NODE_SINGLE_OP_FACTOR_NOT;}
 };
 class single_op_factor_none_t:public single_op_factor_t{
     public:
@@ -383,7 +383,7 @@ class single_op_factor_none_t:public single_op_factor_t{
         delete expr;
 
     }
-    node_type_t get_kind() override {return NODE_SINGLE_OP_FACTOR_NONE;}
+    node_type_t get_kind() const override {return NODE_SINGLE_OP_FACTOR_NONE;}
 };
 class power_factor_pow_t:public power_factor_t{
     public:
@@ -394,7 +394,7 @@ class power_factor_pow_t:public power_factor_t{
 delete right;
 
     }
-    node_type_t get_kind() override {return NODE_POWER_FACTOR_POW;}
+    node_type_t get_kind() const override {return NODE_POWER_FACTOR_POW;}
 };
 class power_factor_none_t:public power_factor_t{
     public:
@@ -403,7 +403,7 @@ class power_factor_none_t:public power_factor_t{
         delete expr;
 
     }
-    node_type_t get_kind() override {return NODE_POWER_FACTOR_NONE;}
+    node_type_t get_kind() const override {return NODE_POWER_FACTOR_NONE;}
 };
 class term_mul_t:public term_t{
     public:
@@ -414,7 +414,7 @@ class term_mul_t:public term_t{
 delete right;
 
     }
-    node_type_t get_kind() override {return NODE_TERM_MUL;}
+    node_type_t get_kind() const override {return NODE_TERM_MUL;}
 };
 class term_div_t:public term_t{
     public:
@@ -425,7 +425,7 @@ class term_div_t:public term_t{
 delete right;
 
     }
-    node_type_t get_kind() override {return NODE_TERM_DIV;}
+    node_type_t get_kind() const override {return NODE_TERM_DIV;}
 };
 class term_mod_t:public term_t{
     public:
@@ -436,7 +436,7 @@ class term_mod_t:public term_t{
 delete right;
 
     }
-    node_type_t get_kind() override {return NODE_TERM_MOD;}
+    node_type_t get_kind() const override {return NODE_TERM_MOD;}
 };
 class term_bitand_t:public term_t{
     public:
@@ -447,7 +447,7 @@ class term_bitand_t:public term_t{
 delete right;
 
     }
-    node_type_t get_kind() override {return NODE_TERM_BITAND;}
+    node_type_t get_kind() const override {return NODE_TERM_BITAND;}
 };
 class term_bitor_t:public term_t{
     public:
@@ -458,7 +458,7 @@ class term_bitor_t:public term_t{
 delete right;
 
     }
-    node_type_t get_kind() override {return NODE_TERM_BITOR;}
+    node_type_t get_kind() const override {return NODE_TERM_BITOR;}
 };
 class term_shiftleft_t:public term_t{
     public:
@@ -469,7 +469,7 @@ class term_shiftleft_t:public term_t{
 delete right;
 
     }
-    node_type_t get_kind() override {return NODE_TERM_SHIFTLEFT;}
+    node_type_t get_kind() const override {return NODE_TERM_SHIFTLEFT;}
 };
 class term_shiftright_t:public term_t{
     public:
@@ -480,7 +480,7 @@ class term_shiftright_t:public term_t{
 delete right;
 
     }
-    node_type_t get_kind() override {return NODE_TERM_SHIFTRIGHT;}
+    node_type_t get_kind() const override {return NODE_TERM_SHIFTRIGHT;}
 };
 class term_factor_t:public term_t{
     public:
@@ -489,7 +489,7 @@ class term_factor_t:public term_t{
         delete expr;
 
     }
-    node_type_t get_kind() override {return NODE_TERM_FACTOR;}
+    node_type_t get_kind() const override {return NODE_TERM_FACTOR;}
 };
 class expr_add_t:public expr_t{
     public:
@@ -500,7 +500,7 @@ class expr_add_t:public expr_t{
 delete right;
 
     }
-    node_type_t get_kind() override {return NODE_EXPR_ADD;}
+    node_type_t get_kind() const override {return NODE_EXPR_ADD;}
 };
 class expr_sub_t:public expr_t{
     public:
@@ -511,7 +511,7 @@ class expr_sub_t:public expr_t{
 delete right;
 
     }
-    node_type_t get_kind() override {return NODE_EXPR_SUB;}
+    node_type_t get_kind() const override {return NODE_EXPR_SUB;}
 };
 class expr_term_t:public expr_t{
     public:
@@ -520,7 +520,7 @@ class expr_term_t:public expr_t{
         delete expr;
 
     }
-    node_type_t get_kind() override {return NODE_EXPR_TERM;}
+    node_type_t get_kind() const override {return NODE_EXPR_TERM;}
 };
 class logic_expr_and_and_t:public logic_expr_and_t{
     public:
@@ -531,7 +531,7 @@ class logic_expr_and_and_t:public logic_expr_and_t{
 delete right;
 
     }
-    node_type_t get_kind() override {return NODE_LOGIC_EXPR_AND_AND;}
+    node_type_t get_kind() const override {return NODE_LOGIC_EXPR_AND_AND;}
 };
 class logic_expr_and_none_t:public logic_expr_and_t{
     public:
@@ -540,7 +540,7 @@ class logic_expr_and_none_t:public logic_expr_and_t{
         delete expr;
 
     }
-    node_type_t get_kind() override {return NODE_LOGIC_EXPR_AND_NONE;}
+    node_type_t get_kind() const override {return NODE_LOGIC_EXPR_AND_NONE;}
 };
 class logic_expr_or_or_t:public logic_expr_or_t{
     public:
@@ -551,7 +551,7 @@ class logic_expr_or_or_t:public logic_expr_or_t{
 delete right;
 
     }
-    node_type_t get_kind() override {return NODE_LOGIC_EXPR_OR_OR;}
+    node_type_t get_kind() const override {return NODE_LOGIC_EXPR_OR_OR;}
 };
 class logic_expr_or_none_t:public logic_expr_or_t{
     public:
@@ -560,7 +560,7 @@ class logic_expr_or_none_t:public logic_expr_or_t{
         delete expr;
 
     }
-    node_type_t get_kind() override {return NODE_LOGIC_EXPR_OR_NONE;}
+    node_type_t get_kind() const override {return NODE_LOGIC_EXPR_OR_NONE;}
 };
 class logic_expr_eq_eq_t:public logic_expr_eq_t{
     public:
@@ -571,7 +571,7 @@ class logic_expr_eq_eq_t:public logic_expr_eq_t{
 delete right;
 
     }
-    node_type_t get_kind() override {return NODE_LOGIC_EXPR_EQ_EQ;}
+    node_type_t get_kind() const override {return NODE_LOGIC_EXPR_EQ_EQ;}
 };
 class logic_expr_eq_neq_t:public logic_expr_eq_t{
     public:
@@ -582,7 +582,7 @@ class logic_expr_eq_neq_t:public logic_expr_eq_t{
 delete right;
 
     }
-    node_type_t get_kind() override {return NODE_LOGIC_EXPR_EQ_NEQ;}
+    node_type_t get_kind() const override {return NODE_LOGIC_EXPR_EQ_NEQ;}
 };
 class logic_expr_eq_gt_t:public logic_expr_eq_t{
     public:
@@ -593,7 +593,7 @@ class logic_expr_eq_gt_t:public logic_expr_eq_t{
 delete right;
 
     }
-    node_type_t get_kind() override {return NODE_LOGIC_EXPR_EQ_GT;}
+    node_type_t get_kind() const override {return NODE_LOGIC_EXPR_EQ_GT;}
 };
 class logic_expr_eq_lt_t:public logic_expr_eq_t{
     public:
@@ -604,7 +604,7 @@ class logic_expr_eq_lt_t:public logic_expr_eq_t{
 delete right;
 
     }
-    node_type_t get_kind() override {return NODE_LOGIC_EXPR_EQ_LT;}
+    node_type_t get_kind() const override {return NODE_LOGIC_EXPR_EQ_LT;}
 };
 class logic_expr_eq_ge_t:public logic_expr_eq_t{
     public:
@@ -615,7 +615,7 @@ class logic_expr_eq_ge_t:public logic_expr_eq_t{
 delete right;
 
     }
-    node_type_t get_kind() override {return NODE_LOGIC_EXPR_EQ_GE;}
+    node_type_t get_kind() const override {return NODE_LOGIC_EXPR_EQ_GE;}
 };
 class logic_expr_eq_le_t:public logic_expr_eq_t{
     public:
@@ -626,7 +626,7 @@ class logic_expr_eq_le_t:public logic_expr_eq_t{
 delete right;
 
     }
-    node_type_t get_kind() override {return NODE_LOGIC_EXPR_EQ_LE;}
+    node_type_t get_kind() const override {return NODE_LOGIC_EXPR_EQ_LE;}
 };
 class logic_expr_eq_none_t:public logic_expr_eq_t{
     public:
@@ -635,7 +635,7 @@ class logic_expr_eq_none_t:public logic_expr_eq_t{
         delete expr;
 
     }
-    node_type_t get_kind() override {return NODE_LOGIC_EXPR_EQ_NONE;}
+    node_type_t get_kind() const override {return NODE_LOGIC_EXPR_EQ_NONE;}
 };
 class assign_expr_assign_t:public assign_expr_t{
     public:
@@ -646,7 +646,7 @@ class assign_expr_assign_t:public assign_expr_t{
 delete right;
 
     }
-    node_type_t get_kind() override {return NODE_ASSIGN_EXPR_ASSIGN;}
+    node_type_t get_kind() const override {return NODE_ASSIGN_EXPR_ASSIGN;}
 };
 class assign_expr_plus_assign_t:public assign_expr_t{
     public:
@@ -657,7 +657,7 @@ class assign_expr_plus_assign_t:public assign_expr_t{
 delete right;
 
     }
-    node_type_t get_kind() override {return NODE_ASSIGN_EXPR_PLUS_ASSIGN;}
+    node_type_t get_kind() const override {return NODE_ASSIGN_EXPR_PLUS_ASSIGN;}
 };
 class assign_expr_minus_assign_t:public assign_expr_t{
     public:
@@ -668,7 +668,7 @@ class assign_expr_minus_assign_t:public assign_expr_t{
 delete right;
 
     }
-    node_type_t get_kind() override {return NODE_ASSIGN_EXPR_MINUS_ASSIGN;}
+    node_type_t get_kind() const override {return NODE_ASSIGN_EXPR_MINUS_ASSIGN;}
 };
 class assign_expr_mul_assign_t:public assign_expr_t{
     public:
@@ -679,7 +679,7 @@ class assign_expr_mul_assign_t:public assign_expr_t{
 delete right;
 
     }
-    node_type_t get_kind() override {return NODE_ASSIGN_EXPR_MUL_ASSIGN;}
+    node_type_t get_kind() const override {return NODE_ASSIGN_EXPR_MUL_ASSIGN;}
 };
 class assign_expr_div_assign_t:public assign_expr_t{
     public:
@@ -690,7 +690,7 @@ class assign_expr_div_assign_t:public assign_expr_t{
 delete right;
 
     }
-    node_type_t get_kind() override {return NODE_ASSIGN_EXPR_DIV_ASSIGN;}
+    node_type_t get_kind() const override {return NODE_ASSIGN_EXPR_DIV_ASSIGN;}
 };
 class assign_expr_mod_assign_t:public assign_expr_t{
     public:
@@ -701,7 +701,7 @@ class assign_expr_mod_assign_t:public assign_expr_t{
 delete right;
 
     }
-    node_type_t get_kind() override {return NODE_ASSIGN_EXPR_MOD_ASSIGN;}
+    node_type_t get_kind() const override {return NODE_ASSIGN_EXPR_MOD_ASSIGN;}
 };
 class assign_expr_bitand_assign_t:public assign_expr_t{
     public:
@@ -712,7 +712,7 @@ class assign_expr_bitand_assign_t:public assign_expr_t{
 delete right;
 
     }
-    node_type_t get_kind() override {return NODE_ASSIGN_EXPR_BITAND_ASSIGN;}
+    node_type_t get_kind() const override {return NODE_ASSIGN_EXPR_BITAND_ASSIGN;}
 };
 class assign_expr_bitor_assign_t:public assign_expr_t{
     public:
@@ -723,7 +723,7 @@ class assign_expr_bitor_assign_t:public assign_expr_t{
 delete right;
 
     }
-    node_type_t get_kind() override {return NODE_ASSIGN_EXPR_BITOR_ASSIGN;}
+    node_type_t get_kind() const override {return NODE_ASSIGN_EXPR_BITOR_ASSIGN;}
 };
 class assign_expr_shiftleft_assign_t:public assign_expr_t{
     public:
@@ -734,7 +734,7 @@ class assign_expr_shiftleft_assign_t:public assign_expr_t{
 delete right;
 
     }
-    node_type_t get_kind() override {return NODE_ASSIGN_EXPR_SHIFTLEFT_ASSIGN;}
+    node_type_t get_kind() const override {return NODE_ASSIGN_EXPR_SHIFTLEFT_ASSIGN;}
 };
 class assign_expr_shiftright_assign_t:public assign_expr_t{
     public:
@@ -745,7 +745,7 @@ class assign_expr_shiftright_assign_t:public assign_expr_t{
 delete right;
 
     }
-    node_type_t get_kind() override {return NODE_ASSIGN_EXPR_SHIFTRIGHT_ASSIGN;}
+    node_type_t get_kind() const override {return NODE_ASSIGN_EXPR_SHIFTRIGHT_ASSIGN;}
 };
 class assign_expr_logic_expr_t:public assign_expr_t{
     public:
@@ -754,7 +754,7 @@ class assign_expr_logic_expr_t:public assign_expr_t{
         delete expr;
 
     }
-    node_type_t get_kind() override {return NODE_ASSIGN_EXPR_LOGIC_EXPR;}
+    node_type_t get_kind() const override {return NODE_ASSIGN_EXPR_LOGIC_EXPR;}
 };
 class ultimate_expr_def_t:public ultimate_expr_t{
     public:
@@ -763,7 +763,7 @@ class ultimate_expr_def_t:public ultimate_expr_t{
         delete expr;
 
     }
-    node_type_t get_kind() override {return NODE_ULTIMATE_EXPR_DEF;}
+    node_type_t get_kind() const override {return NODE_ULTIMATE_EXPR_DEF;}
 };
 class lvalue_noproperty_parened_t:public lvalue_noproperty_t{
     public:
@@ -772,7 +772,7 @@ class lvalue_noproperty_parened_t:public lvalue_noproperty_t{
         delete expr;
 
     }
-    node_type_t get_kind() override {return NODE_LVALUE_NOPROPERTY_PARENED;}
+    node_type_t get_kind() const override {return NODE_LVALUE_NOPROPERTY_PARENED;}
 };
 class lvalue_noproperty_deref_t:public lvalue_noproperty_t{
     public:
@@ -781,7 +781,7 @@ class lvalue_noproperty_deref_t:public lvalue_noproperty_t{
         delete derefee;
 
     }
-    node_type_t get_kind() override {return NODE_LVALUE_NOPROPERTY_DEREF;}
+    node_type_t get_kind() const override {return NODE_LVALUE_NOPROPERTY_DEREF;}
 };
 class lvalue_noproperty_id_t:public lvalue_noproperty_t{
     public:
@@ -789,7 +789,7 @@ class lvalue_noproperty_id_t:public lvalue_noproperty_t{
     ~lvalue_noproperty_id_t() override{
         
     }
-    node_type_t get_kind() override {return NODE_LVALUE_NOPROPERTY_ID;}
+    node_type_t get_kind() const override {return NODE_LVALUE_NOPROPERTY_ID;}
 };
 class lvalue_prop_t:public lvalue_t{
     public:
@@ -799,7 +799,7 @@ class lvalue_prop_t:public lvalue_t{
         delete left;
 
     }
-    node_type_t get_kind() override {return NODE_LVALUE_PROP;}
+    node_type_t get_kind() const override {return NODE_LVALUE_PROP;}
 };
 class lvalue_noprop_t:public lvalue_t{
     public:
@@ -808,7 +808,7 @@ class lvalue_noprop_t:public lvalue_t{
         delete expr;
 
     }
-    node_type_t get_kind() override {return NODE_LVALUE_NOPROP;}
+    node_type_t get_kind() const override {return NODE_LVALUE_NOPROP;}
 };
 class composed_type_raw_type_t:public composed_type_t{
     public:
@@ -816,7 +816,7 @@ class composed_type_raw_type_t:public composed_type_t{
     ~composed_type_raw_type_t() override{
         
     }
-    node_type_t get_kind() override {return NODE_COMPOSED_TYPE_RAW_TYPE;}
+    node_type_t get_kind() const override {return NODE_COMPOSED_TYPE_RAW_TYPE;}
 };
 class composed_type_paren_t:public composed_type_t{
     public:
@@ -825,7 +825,7 @@ class composed_type_paren_t:public composed_type_t{
         delete inner_type;
 
     }
-    node_type_t get_kind() override {return NODE_COMPOSED_TYPE_PAREN;}
+    node_type_t get_kind() const override {return NODE_COMPOSED_TYPE_PAREN;}
 };
 class composed_type_ptr_t:public composed_type_t{
     public:
@@ -834,7 +834,7 @@ class composed_type_ptr_t:public composed_type_t{
         delete pointer_type;
 
     }
-    node_type_t get_kind() override {return NODE_COMPOSED_TYPE_PTR;}
+    node_type_t get_kind() const override {return NODE_COMPOSED_TYPE_PTR;}
 };
 class composed_type_nsizedarr_t:public composed_type_t{
     public:
@@ -843,7 +843,7 @@ class composed_type_nsizedarr_t:public composed_type_t{
         delete element_type;
 
     }
-    node_type_t get_kind() override {return NODE_COMPOSED_TYPE_NSIZEDARR;}
+    node_type_t get_kind() const override {return NODE_COMPOSED_TYPE_NSIZEDARR;}
 };
 class composed_type_sizedarr_t:public composed_type_t{
     public:
@@ -854,7 +854,7 @@ class composed_type_sizedarr_t:public composed_type_t{
 delete array_size;
 
     }
-    node_type_t get_kind() override {return NODE_COMPOSED_TYPE_SIZEDARR;}
+    node_type_t get_kind() const override {return NODE_COMPOSED_TYPE_SIZEDARR;}
 };
 class definition_deftype_t:public definition_t{
     public:
@@ -866,7 +866,7 @@ class definition_deftype_t:public definition_t{
 delete value;
 
     }
-    node_type_t get_kind() override {return NODE_DEFINITION_DEFTYPE;}
+    node_type_t get_kind() const override {return NODE_DEFINITION_DEFTYPE;}
 };
 class definition_defntype_t:public definition_t{
     public:
@@ -876,7 +876,7 @@ class definition_defntype_t:public definition_t{
         delete value;
 
     }
-    node_type_t get_kind() override {return NODE_DEFINITION_DEFNTYPE;}
+    node_type_t get_kind() const override {return NODE_DEFINITION_DEFNTYPE;}
 };
 class else_default_t:public else_t{
     public:
@@ -885,7 +885,7 @@ class else_default_t:public else_t{
         delete statements;
 
     }
-    node_type_t get_kind() override {return NODE_ELSE_DEFAULT;}
+    node_type_t get_kind() const override {return NODE_ELSE_DEFAULT;}
 };
 class elseif_default_t:public elseif_t{
     public:
@@ -896,7 +896,7 @@ class elseif_default_t:public elseif_t{
 delete statements;
 
     }
-    node_type_t get_kind() override {return NODE_ELSEIF_DEFAULT;}
+    node_type_t get_kind() const override {return NODE_ELSEIF_DEFAULT;}
 };
 class elseif_else_onlyelse_t:public elseif_else_t{
     public:
@@ -905,7 +905,7 @@ class elseif_else_onlyelse_t:public elseif_else_t{
         delete else_block;
 
     }
-    node_type_t get_kind() override {return NODE_ELSEIF_ELSE_ONLYELSE;}
+    node_type_t get_kind() const override {return NODE_ELSEIF_ELSE_ONLYELSE;}
 };
 class elseif_else_chain_t:public elseif_else_t{
     public:
@@ -916,7 +916,7 @@ class elseif_else_chain_t:public elseif_else_t{
 delete rest_block;
 
     }
-    node_type_t get_kind() override {return NODE_ELSEIF_ELSE_CHAIN;}
+    node_type_t get_kind() const override {return NODE_ELSEIF_ELSE_CHAIN;}
 };
 class elseif_else_empty_t:public elseif_else_t{
     public:
@@ -924,7 +924,7 @@ class elseif_else_empty_t:public elseif_else_t{
     ~elseif_else_empty_t() override{
         
     }
-    node_type_t get_kind() override {return NODE_ELSEIF_ELSE_EMPTY;}
+    node_type_t get_kind() const override {return NODE_ELSEIF_ELSE_EMPTY;}
 };
 class if_default_t:public if_t{
     public:
@@ -937,7 +937,7 @@ delete statements;
 delete rest_block;
 
     }
-    node_type_t get_kind() override {return NODE_IF_DEFAULT;}
+    node_type_t get_kind() const override {return NODE_IF_DEFAULT;}
 };
 class while_default_t:public while_t{
     public:
@@ -948,7 +948,7 @@ class while_default_t:public while_t{
 delete statements;
 
     }
-    node_type_t get_kind() override {return NODE_WHILE_DEFAULT;}
+    node_type_t get_kind() const override {return NODE_WHILE_DEFAULT;}
 };
 class structmembers_singmem_t:public structmembers_t{
     public:
@@ -958,7 +958,7 @@ class structmembers_singmem_t:public structmembers_t{
         delete def_type;
 
     }
-    node_type_t get_kind() override {return NODE_STRUCTMEMBERS_SINGMEM;}
+    node_type_t get_kind() const override {return NODE_STRUCTMEMBERS_SINGMEM;}
 };
 class structmembers_multimem_t:public structmembers_t{
     public:
@@ -970,7 +970,7 @@ class structmembers_multimem_t:public structmembers_t{
 delete other_members;
 
     }
-    node_type_t get_kind() override {return NODE_STRUCTMEMBERS_MULTIMEM;}
+    node_type_t get_kind() const override {return NODE_STRUCTMEMBERS_MULTIMEM;}
 };
 class structmembers_empty_t:public structmembers_t{
     public:
@@ -978,7 +978,7 @@ class structmembers_empty_t:public structmembers_t{
     ~structmembers_empty_t() override{
         
     }
-    node_type_t get_kind() override {return NODE_STRUCTMEMBERS_EMPTY;}
+    node_type_t get_kind() const override {return NODE_STRUCTMEMBERS_EMPTY;}
 };
 class struct_default_t:public struct_t{
     public:
@@ -988,7 +988,7 @@ class struct_default_t:public struct_t{
         delete members;
 
     }
-    node_type_t get_kind() override {return NODE_STRUCT_DEFAULT;}
+    node_type_t get_kind() const override {return NODE_STRUCT_DEFAULT;}
 };
 class declaration_varntype_t:public declaration_t{
     public:
@@ -996,7 +996,7 @@ class declaration_varntype_t:public declaration_t{
     ~declaration_varntype_t() override{
         
     }
-    node_type_t get_kind() override {return NODE_DECLARATION_VARNTYPE;}
+    node_type_t get_kind() const override {return NODE_DECLARATION_VARNTYPE;}
 };
 class declaration_var_t:public declaration_t{
     public:
@@ -1006,7 +1006,7 @@ class declaration_var_t:public declaration_t{
         delete def_type;
 
     }
-    node_type_t get_kind() override {return NODE_DECLARATION_VAR;}
+    node_type_t get_kind() const override {return NODE_DECLARATION_VAR;}
 };
 class declaration_fn_t:public declaration_t{
     public:
@@ -1018,7 +1018,7 @@ class declaration_fn_t:public declaration_t{
 delete return_type;
 
     }
-    node_type_t get_kind() override {return NODE_DECLARATION_FN;}
+    node_type_t get_kind() const override {return NODE_DECLARATION_FN;}
 };
 class declaration_struct_t:public declaration_t{
     public:
@@ -1028,7 +1028,7 @@ class declaration_struct_t:public declaration_t{
         delete members;
 
     }
-    node_type_t get_kind() override {return NODE_DECLARATION_STRUCT;}
+    node_type_t get_kind() const override {return NODE_DECLARATION_STRUCT;}
 };
 class statement_expr_t:public statement_t{
     public:
@@ -1037,7 +1037,7 @@ class statement_expr_t:public statement_t{
         delete expr;
 
     }
-    node_type_t get_kind() override {return NODE_STATEMENT_EXPR;}
+    node_type_t get_kind() const override {return NODE_STATEMENT_EXPR;}
 };
 class statement_definition_t:public statement_t{
     public:
@@ -1046,7 +1046,7 @@ class statement_definition_t:public statement_t{
         delete def;
 
     }
-    node_type_t get_kind() override {return NODE_STATEMENT_DEFINITION;}
+    node_type_t get_kind() const override {return NODE_STATEMENT_DEFINITION;}
 };
 class statement_if_t:public statement_t{
     public:
@@ -1055,7 +1055,7 @@ class statement_if_t:public statement_t{
         delete if_stmt;
 
     }
-    node_type_t get_kind() override {return NODE_STATEMENT_IF;}
+    node_type_t get_kind() const override {return NODE_STATEMENT_IF;}
 };
 class statement_while_t:public statement_t{
     public:
@@ -1064,7 +1064,7 @@ class statement_while_t:public statement_t{
         delete while_stmt;
 
     }
-    node_type_t get_kind() override {return NODE_STATEMENT_WHILE;}
+    node_type_t get_kind() const override {return NODE_STATEMENT_WHILE;}
 };
 class statement_declaration_t:public statement_t{
     public:
@@ -1073,7 +1073,7 @@ class statement_declaration_t:public statement_t{
         delete decl_stmt;
 
     }
-    node_type_t get_kind() override {return NODE_STATEMENT_DECLARATION;}
+    node_type_t get_kind() const override {return NODE_STATEMENT_DECLARATION;}
 };
 class statement_break_t:public statement_t{
     public:
@@ -1081,7 +1081,7 @@ class statement_break_t:public statement_t{
     ~statement_break_t() override{
         
     }
-    node_type_t get_kind() override {return NODE_STATEMENT_BREAK;}
+    node_type_t get_kind() const override {return NODE_STATEMENT_BREAK;}
 };
 class statement_continue_t:public statement_t{
     public:
@@ -1089,7 +1089,7 @@ class statement_continue_t:public statement_t{
     ~statement_continue_t() override{
         
     }
-    node_type_t get_kind() override {return NODE_STATEMENT_CONTINUE;}
+    node_type_t get_kind() const override {return NODE_STATEMENT_CONTINUE;}
 };
 class statement_return_empty_t:public statement_t{
     public:
@@ -1097,7 +1097,7 @@ class statement_return_empty_t:public statement_t{
     ~statement_return_empty_t() override{
         
     }
-    node_type_t get_kind() override {return NODE_STATEMENT_RETURN_EMPTY;}
+    node_type_t get_kind() const override {return NODE_STATEMENT_RETURN_EMPTY;}
 };
 class statement_return_sth_t:public statement_t{
     public:
@@ -1106,7 +1106,7 @@ class statement_return_sth_t:public statement_t{
         delete value;
 
     }
-    node_type_t get_kind() override {return NODE_STATEMENT_RETURN_STH;}
+    node_type_t get_kind() const override {return NODE_STATEMENT_RETURN_STH;}
 };
 class statements_stmt_t:public statements_t{
     public:
@@ -1115,7 +1115,7 @@ class statements_stmt_t:public statements_t{
         delete stmt;
 
     }
-    node_type_t get_kind() override {return NODE_STATEMENTS_STMT;}
+    node_type_t get_kind() const override {return NODE_STATEMENTS_STMT;}
 };
 class statements_multistmt_t:public statements_t{
     public:
@@ -1126,7 +1126,7 @@ class statements_multistmt_t:public statements_t{
 delete other_stmts;
 
     }
-    node_type_t get_kind() override {return NODE_STATEMENTS_MULTISTMT;}
+    node_type_t get_kind() const override {return NODE_STATEMENTS_MULTISTMT;}
 };
 class statements_empty_t:public statements_t{
     public:
@@ -1134,7 +1134,7 @@ class statements_empty_t:public statements_t{
     ~statements_empty_t() override{
         
     }
-    node_type_t get_kind() override {return NODE_STATEMENTS_EMPTY;}
+    node_type_t get_kind() const override {return NODE_STATEMENTS_EMPTY;}
 };
 class func_returntype_hastype_t:public func_returntype_t{
     public:
@@ -1143,7 +1143,7 @@ class func_returntype_hastype_t:public func_returntype_t{
         delete return_type;
 
     }
-    node_type_t get_kind() override {return NODE_FUNC_RETURNTYPE_HASTYPE;}
+    node_type_t get_kind() const override {return NODE_FUNC_RETURNTYPE_HASTYPE;}
 };
 class func_returntype_void_t:public func_returntype_t{
     public:
@@ -1151,7 +1151,7 @@ class func_returntype_void_t:public func_returntype_t{
     ~func_returntype_void_t() override{
         
     }
-    node_type_t get_kind() override {return NODE_FUNC_RETURNTYPE_VOID;}
+    node_type_t get_kind() const override {return NODE_FUNC_RETURNTYPE_VOID;}
 };
 class arglist_nonempty_singarg_t:public arglist_nonempty_t{
     public:
@@ -1161,7 +1161,7 @@ class arglist_nonempty_singarg_t:public arglist_nonempty_t{
         delete arg_type;
 
     }
-    node_type_t get_kind() override {return NODE_ARGLIST_NONEMPTY_SINGARG;}
+    node_type_t get_kind() const override {return NODE_ARGLIST_NONEMPTY_SINGARG;}
 };
 class arglist_nonempty_multiarg_t:public arglist_nonempty_t{
     public:
@@ -1173,7 +1173,7 @@ class arglist_nonempty_multiarg_t:public arglist_nonempty_t{
 delete other_args;
 
     }
-    node_type_t get_kind() override {return NODE_ARGLIST_NONEMPTY_MULTIARG;}
+    node_type_t get_kind() const override {return NODE_ARGLIST_NONEMPTY_MULTIARG;}
 };
 class arglist_hasarg_t:public arglist_t{
     public:
@@ -1182,7 +1182,7 @@ class arglist_hasarg_t:public arglist_t{
         delete args;
 
     }
-    node_type_t get_kind() override {return NODE_ARGLIST_HASARG;}
+    node_type_t get_kind() const override {return NODE_ARGLIST_HASARG;}
 };
 class arglist_empty_t:public arglist_t{
     public:
@@ -1190,7 +1190,7 @@ class arglist_empty_t:public arglist_t{
     ~arglist_empty_t() override{
         
     }
-    node_type_t get_kind() override {return NODE_ARGLIST_EMPTY;}
+    node_type_t get_kind() const override {return NODE_ARGLIST_EMPTY;}
 };
 class function_default_t:public function_t{
     public:
@@ -1204,7 +1204,7 @@ delete return_type;
 delete stmts;
 
     }
-    node_type_t get_kind() override {return NODE_FUNCTION_DEFAULT;}
+    node_type_t get_kind() const override {return NODE_FUNCTION_DEFAULT;}
 };
 class top_statement_func_def_t:public top_statement_t{
     public:
@@ -1213,7 +1213,7 @@ class top_statement_func_def_t:public top_statement_t{
         delete func;
 
     }
-    node_type_t get_kind() override {return NODE_TOP_STATEMENT_FUNC_DEF;}
+    node_type_t get_kind() const override {return NODE_TOP_STATEMENT_FUNC_DEF;}
 };
 class top_statement_decl_t:public top_statement_t{
     public:
@@ -1222,7 +1222,7 @@ class top_statement_decl_t:public top_statement_t{
         delete decl;
 
     }
-    node_type_t get_kind() override {return NODE_TOP_STATEMENT_DECL;}
+    node_type_t get_kind() const override {return NODE_TOP_STATEMENT_DECL;}
 };
 class top_statement_var_def_t:public top_statement_t{
     public:
@@ -1231,7 +1231,7 @@ class top_statement_var_def_t:public top_statement_t{
         delete def;
 
     }
-    node_type_t get_kind() override {return NODE_TOP_STATEMENT_VAR_DEF;}
+    node_type_t get_kind() const override {return NODE_TOP_STATEMENT_VAR_DEF;}
 };
 class top_statement_structdef_t:public top_statement_t{
     public:
@@ -1240,5 +1240,5 @@ class top_statement_structdef_t:public top_statement_t{
         delete structdef;
 
     }
-    node_type_t get_kind() override {return NODE_TOP_STATEMENT_STRUCTDEF;}
+    node_type_t get_kind() const override {return NODE_TOP_STATEMENT_STRUCTDEF;}
 };
