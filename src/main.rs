@@ -5,6 +5,7 @@ use crate::{lexer::{generate_lexer_source, parse_lexer_rules}, parser::{generate
 pub mod lexer;
 pub mod parser;
 pub mod sematic;
+pub mod ir;
 pub fn write_to_file(path:&str,text:&str)->Result<(),Error> {
     let mut file=File::create(path)?;
     file.write_all(text.as_bytes())
