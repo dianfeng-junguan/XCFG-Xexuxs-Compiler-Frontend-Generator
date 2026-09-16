@@ -127,11 +127,9 @@ definition.deftype:
     require_valid_variable_type(def_type)
     visit(value)
     check_assignable(def_type,value)
-    mark_initialized(name)
 definition.defntype:
     visit(value)
     infer_variable_type(name,value)
-    mark_initialized(name)
 declaration.var:
     visit(def_type)
     require_valid_variable_type(def_type)
@@ -160,69 +158,59 @@ assign_expr.assign:
     visit(right)
     require_modifiable_lvalue(left)
     check_assignable(left,right)
-    mark_lvalue_initialized(left)
     propagate_type(left)
 assign_expr.plus_assign:
     visit(left)
     visit(right)
     require_modifiable_lvalue(left)
-    require_initialized(left)
     check_addable(left,right)
     propagate_type(left)
 assign_expr.minus_assign:
     visit(left)
     visit(right)
     require_modifiable_lvalue(left)
-    require_initialized(left)
     check_minusable(left,right)
     propagate_type(left)
 assign_expr.mul_assign:
     visit(left)
     visit(right)
     require_modifiable_lvalue(left)
-    require_initialized(left)
     check_mulable(left,right)
     propagate_type(left)
 assign_expr.div_assign:
     visit(left)
     visit(right)
     require_modifiable_lvalue(left)
-    require_initialized(left)
     check_divable(left,right)
     propagate_type(left)
 assign_expr.mod_assign:
     visit(left)
     visit(right)
     require_modifiable_lvalue(left)
-    require_initialized(left)
     check_modable(left,right)
     propagate_type(left)
 assign_expr.bitand_assign:
     visit(left)
     visit(right)
     require_modifiable_lvalue(left)
-    require_initialized(left)
     check_bitandable(left,right)
     propagate_type(left)
 assign_expr.bitor_assign:
     visit(left)
     visit(right)
     require_modifiable_lvalue(left)
-    require_initialized(left)
     check_bitorable(left,right)
     propagate_type(left)
 assign_expr.shiftleft_assign:
     visit(left)
     visit(right)
     require_modifiable_lvalue(left)
-    require_initialized(left)
     check_shiftleftable(left,right)
     propagate_type(left)
 assign_expr.shiftright_assign:
     visit(left)
     visit(right)
     require_modifiable_lvalue(left)
-    require_initialized(left)
     check_shiftrightable(left,right)
     propagate_type(left)
 assign_expr.logic_expr:
@@ -355,7 +343,6 @@ single_op_factor.not:
     set_boolean_type()
 lvalue_noproperty.deref:
     visit(derefee)
-    require_initialized(derefee)
     require_pointer(derefee)
     infer_pointee_type(derefee)
 lvalue_noproperty.parened:
@@ -376,17 +363,14 @@ glued_factor.call:
     infer_call_result_type(left)
 glued_factor.def:
     visit(left)
-    require_initialized(left)
     check_member_access(left,right)
     propagate_member_type(left,right)
 lvalue.prop:
     visit(left)
-    require_initialized(left)
     check_member_access(left,right)
     propagate_member_type(left,right)
 factor.id:
     propagate_symbol_type(value)
-    require_initialized(value)
 factor.num:
     set_number_type(value)
 factor.ch:
@@ -450,6 +434,128 @@ while.default:
     visit(condition)
     require_boolean(condition)
     visit(statements)
+
+[definite_init]
+function.default:
+    begin_definite_function()
+    mark_parameters_initialized(args)
+    visit(stmts)
+    end_definite_function()
+definition.deftype:
+    visit(value)
+    mark_initialized(name)
+definition.defntype:
+    visit(value)
+    mark_initialized(name)
+declaration.varntype:
+    mark_uninitialized(name)
+declaration.var:
+    mark_uninitialized(name)
+assign_expr.assign:
+    push_write_access()
+    visit(left)
+    pop_access_mode()
+    visit(right)
+    mark_lvalue_initialized(left)
+assign_expr.plus_assign:
+    push_read_access()
+    visit(left)
+    pop_access_mode()
+    visit(right)
+assign_expr.minus_assign:
+    push_read_access()
+    visit(left)
+    pop_access_mode()
+    visit(right)
+assign_expr.mul_assign:
+    push_read_access()
+    visit(left)
+    pop_access_mode()
+    visit(right)
+assign_expr.div_assign:
+    push_read_access()
+    visit(left)
+    pop_access_mode()
+    visit(right)
+assign_expr.mod_assign:
+    push_read_access()
+    visit(left)
+    pop_access_mode()
+    visit(right)
+assign_expr.bitand_assign:
+    push_read_access()
+    visit(left)
+    pop_access_mode()
+    visit(right)
+assign_expr.bitor_assign:
+    push_read_access()
+    visit(left)
+    pop_access_mode()
+    visit(right)
+assign_expr.shiftleft_assign:
+    push_read_access()
+    visit(left)
+    pop_access_mode()
+    visit(right)
+assign_expr.shiftright_assign:
+    push_read_access()
+    visit(left)
+    pop_access_mode()
+    visit(right)
+single_op_factor.ref:
+    push_address_access()
+    visit(expr)
+    pop_access_mode()
+single_op_factor.deref:
+    push_read_access()
+    visit(expr)
+    pop_access_mode()
+lvalue_noproperty.deref:
+    push_read_access()
+    visit(derefee)
+    pop_access_mode()
+factor.id:
+    require_initialized_if_read(value)
+lvalue_noproperty.id:
+    require_initialized_if_read(id)
+logic_expr_and.and:
+    visit(left)
+    begin_optional_init()
+    visit(right)
+    end_optional_init()
+logic_expr_or.or:
+    visit(left)
+    begin_optional_init()
+    visit(right)
+    end_optional_init()
+if.default:
+    visit(condition)
+    begin_conditional_init()
+    begin_init_branch()
+    visit(statements)
+    end_init_branch()
+    visit(rest_block)
+    end_conditional_init()
+elseif_else.onlyelse:
+    begin_init_branch()
+    visit(else_block)
+    end_init_branch()
+elseif_else.chain:
+    visit(elseif_block)
+    visit(rest_block)
+elseif_else.empty:
+    record_implicit_init_branch()
+elseif.default:
+    begin_init_branch()
+    visit(condition)
+    save_init_condition_fallthrough()
+    visit(statements)
+    end_init_branch()
+while.default:
+    visit(condition)
+    begin_loop_init()
+    visit(statements)
+    end_loop_init()
 
 [flow]
 function.default:

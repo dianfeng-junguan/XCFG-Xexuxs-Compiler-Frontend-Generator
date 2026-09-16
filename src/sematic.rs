@@ -51,10 +51,15 @@ struct SematicNodeMember{
     name:String
 }
 #[derive(Clone)]
+enum SematicStep {
+    Call(SematicFunc),
+    Visit(SematicNodeMember)
+}
+#[derive(Clone)]
 struct SematicRule{
     ruleset:String,
     rule:String,
-    steps:Vec<SematicFunc>,
+    steps:Vec<SematicStep>,
 }
 impl SematicRule {
     fn new(ruleset:&str,rule:&str) -> Self {
@@ -141,9 +146,30 @@ pub fn parse_sematic_rules(path:&str, ruleset:&Vec<ParserRuleSet>)->Vec<SematicP
             }).collect::<Vec<String>>();
             // push it to the last node (current)
             if let Some(current_rule) = current_rules.iter_mut().nth_back(0){
-                current_rule.steps.push(SematicFunc { name: func_name.to_string(), arguments: args.iter().enumerate().map(|(index,s)| 
-                    SematicFuncArgument { name: s.to_string(), typestr: arg_types.get(index).unwrap().clone() }
-                ).collect() });
+                let args: Vec<SematicFuncArgument>=args.iter().enumerate().map(|(index,s)| 
+                    SematicFuncArgument { 
+                        name: s.to_string(), 
+                        typestr: arg_types.get(index).unwrap().clone() 
+                    }).collect();
+                if func_name=="visit" {
+                    if args.len()!=1 {
+                        eprintln!("sematicgen err: visit() requires 1 argument but {} are/is provided",args.len());
+                        continue;
+                    }else if args.get(0).unwrap().typestr=="token_t*" {
+                        eprintln!("sematicgen err: visit() cannot visit token_t");
+                        continue;
+                    }else {
+                        current_rule.steps.push(SematicStep::Visit(SematicNodeMember { name: args.get(0).unwrap().name.clone() }));
+                    }
+                }else {
+                    current_rule.steps.push(
+                        SematicStep::Call(
+                            SematicFunc { 
+                                name: func_name.to_string(), 
+                                arguments: args
+                            }
+                        ));
+                }
             }else {
                 eprintln!("sematic rule file parser err at line {}: node rule before node",i);
                 continue;
@@ -162,7 +188,19 @@ pub fn parse_sematic_rules(path:&str, ruleset:&Vec<ParserRuleSet>)->Vec<SematicP
             println!("[{}]",p.name);
             for r in p.rules.iter() {
                 println!("{}.{}:",r.ruleset,r.rule);
-                r.steps.iter().for_each(|e| println!("{}({})",e.name,e.arguments.iter().map(|a| a.name.clone()).collect::<Vec<String>>().join(",")));
+                r.steps.iter().for_each(|step| {
+                    let (func_name,func_args)=match step{
+                        SematicStep::Call(e)=>{
+                            (e.name.clone(),
+                            e.arguments.iter().map(|a| a.name.clone()).collect::<Vec<String>>().join(","))
+                        },
+                        SematicStep::Visit(mem)=>{
+                            (String::from("visit"),
+                            mem.name.clone())
+                        }
+                    };
+                    println!("{}({})",func_name,func_args);
+                });
             }
         }
     }
@@ -175,10 +213,12 @@ pub fn generate_sematic_code(passes:&Vec<SematicPass>,ruleset:&Vec<ParserRuleSet
         let mut chks: Vec<String>=Vec::new();
         for p in passes.iter() {
             for r in p.rules.iter() {
-                r.steps.iter().for_each(|e| 
+                r.steps.iter().for_each(|step| 
                     // remove duplicates
-                    if e.name!="visit"&&!chks.contains(&e.signature()) {
-                        chks.push(e.signature());
+                    if let SematicStep::Call(e) = step {
+                        if !chks.contains(&e.signature()) {
+                            chks.push(e.signature());
+                        }
                     }
                 );
             }
@@ -200,8 +240,14 @@ pub fn generate_sematic_code(passes:&Vec<SematicPass>,ruleset:&Vec<ParserRuleSet
         let mut stage_switch_branches=Vec::new();
         for rule in stg.rules.iter() {
             recorded_rules.push((&rule.ruleset,&rule.rule));
-            let calls=rule.steps.iter().map(|e| {
-                format!("if(!{}({}))return false;",e.name,e.argument_list_with_comma())
+            let calls=rule.steps.iter().map(|step| {
+                let (func_name,func_args)=match step {
+                    SematicStep::Call(e)=>
+                    (e.name.clone(),e.argument_list_with_comma()),
+                    SematicStep::Visit(e)=>
+                    (String::from("visit"),format!("node->{},context",e.name))
+                };
+                format!("if(!{}({}))return false;",func_name,func_args)
             }).collect::<Vec<String>>().join("\n\t");
             // generate the whole func
             let func_name=rule.checker_name(stg);

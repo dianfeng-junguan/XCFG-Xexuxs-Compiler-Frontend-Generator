@@ -6,11 +6,13 @@ bool visit(ast_node_t* node,sematic_context_t* context);
 bool predeclare_function(ast_node_t*,token_t*,arglist_t*,func_returntype_t*,sematic_context_t*);
 bool predeclare_struct(ast_node_t*,token_t*,sematic_context_t*);
 bool enter_function_scope(ast_node_t*,sematic_context_t*);
+bool predeclare_parameters(ast_node_t*,arglist_t*,sematic_context_t*);
 bool leave_scope(ast_node_t*,sematic_context_t*);
+bool enter_struct_scope(ast_node_t*,sematic_context_t*);
+bool predeclare_members(ast_node_t*,structmembers_t*,sematic_context_t*);
 bool enter_block_scope(ast_node_t*,sematic_context_t*);
 bool enter_loop_scope(ast_node_t*,sematic_context_t*);
 bool declare_parameters(ast_node_t*,arglist_t*,sematic_context_t*);
-bool enter_struct_scope(ast_node_t*,sematic_context_t*);
 bool declare_members(ast_node_t*,structmembers_t*,sematic_context_t*);
 bool declare_variable(ast_node_t*,token_t*,composed_type_t*,sematic_context_t*);
 bool declare_inferred_variable(ast_node_t*,token_t*,ultimate_expr_t*,sematic_context_t*);
@@ -21,12 +23,22 @@ bool resolve_symbol(ast_node_t*,token_t*,sematic_context_t*);
 bool resolve_member(ast_node_t*,lvalue_t*,token_t*,sematic_context_t*);
 bool resolve_arguments(ast_node_t*,arglist_t*,sematic_context_t*);
 bool resolve_member(ast_node_t*,lvalue_noproperty_t*,token_t*,sematic_context_t*);
-bool require_boolean(ast_node_t*,ultimate_expr_t*,sematic_context_t*);
+bool enter_function_context(ast_node_t*,token_t*,func_returntype_t*,sematic_context_t*);
+bool check_function_type(ast_node_t*,arglist_t*,func_returntype_t*,sematic_context_t*);
+bool leave_function_context(ast_node_t*,sematic_context_t*);
+bool enter_struct_context(ast_node_t*,token_t*,sematic_context_t*);
+bool leave_struct_context(ast_node_t*,sematic_context_t*);
+bool require_valid_variable_type(ast_node_t*,composed_type_t*,sematic_context_t*);
 bool check_assignable(ast_node_t*,composed_type_t*,ultimate_expr_t*,sematic_context_t*);
 bool mark_initialized(ast_node_t*,token_t*,sematic_context_t*);
 bool infer_variable_type(ast_node_t*,token_t*,ultimate_expr_t*,sematic_context_t*);
+bool require_valid_parameter_type(ast_node_t*,composed_type_t*,sematic_context_t*);
+bool require_valid_member_type(ast_node_t*,composed_type_t*,sematic_context_t*);
 bool require_modifiable_lvalue(ast_node_t*,lvalue_t*,sematic_context_t*);
 bool check_assignable(ast_node_t*,lvalue_t*,assign_expr_t*,sematic_context_t*);
+bool mark_lvalue_initialized(ast_node_t*,lvalue_t*,sematic_context_t*);
+bool propagate_type(ast_node_t*,lvalue_t*,sematic_context_t*);
+bool require_initialized(ast_node_t*,lvalue_t*,sematic_context_t*);
 bool check_addable(ast_node_t*,lvalue_t*,assign_expr_t*,sematic_context_t*);
 bool check_minusable(ast_node_t*,lvalue_t*,assign_expr_t*,sematic_context_t*);
 bool check_mulable(ast_node_t*,lvalue_t*,assign_expr_t*,sematic_context_t*);
@@ -36,15 +48,17 @@ bool check_bitandable(ast_node_t*,lvalue_t*,assign_expr_t*,sematic_context_t*);
 bool check_bitorable(ast_node_t*,lvalue_t*,assign_expr_t*,sematic_context_t*);
 bool check_shiftleftable(ast_node_t*,lvalue_t*,assign_expr_t*,sematic_context_t*);
 bool check_shiftrightable(ast_node_t*,lvalue_t*,assign_expr_t*,sematic_context_t*);
+bool propagate_type(ast_node_t*,logic_expr_eq_t*,sematic_context_t*);
 bool check_equalable(ast_node_t*,logic_expr_or_t*,logic_expr_eq_t*,sematic_context_t*);
 bool set_boolean_type(ast_node_t*,sematic_context_t*);
 bool check_nequalable(ast_node_t*,logic_expr_or_t*,logic_expr_eq_t*,sematic_context_t*);
 bool check_comparable(ast_node_t*,logic_expr_or_t*,logic_expr_eq_t*,sematic_context_t*);
 bool require_boolean(ast_node_t*,logic_expr_and_t*,sematic_context_t*);
 bool require_boolean(ast_node_t*,logic_expr_or_t*,sematic_context_t*);
-bool propagate_type(ast_node_t*,logic_expr_and_t*,sematic_context_t*);
 bool require_boolean(ast_node_t*,expr_t*,sematic_context_t*);
 bool propagate_type(ast_node_t*,expr_t*,sematic_context_t*);
+bool propagate_type(ast_node_t*,logic_expr_and_t*,sematic_context_t*);
+bool propagate_type(ast_node_t*,logic_expr_or_t*,sematic_context_t*);
 bool check_addable(ast_node_t*,term_t*,expr_t*,sematic_context_t*);
 bool infer_binary_result_type(ast_node_t*,term_t*,expr_t*,sematic_context_t*);
 bool check_minusable(ast_node_t*,term_t*,expr_t*,sematic_context_t*);
@@ -68,39 +82,53 @@ bool infer_pointee_type(ast_node_t*,single_op_factor_t*,sematic_context_t*);
 bool require_boolean(ast_node_t*,single_op_factor_t*,sematic_context_t*);
 bool require_pointer(ast_node_t*,lvalue_t*,sematic_context_t*);
 bool infer_pointee_type(ast_node_t*,lvalue_t*,sematic_context_t*);
+bool require_lvalue(ast_node_t*,ultimate_expr_t*,sematic_context_t*);
+bool propagate_type(ast_node_t*,ultimate_expr_t*,sematic_context_t*);
+bool propagate_symbol_type(ast_node_t*,token_t*,sematic_context_t*);
+bool propagate_type(ast_node_t*,lvalue_noproperty_t*,sematic_context_t*);
 bool require_callable(ast_node_t*,lvalue_t*,sematic_context_t*);
 bool check_argument_count(ast_node_t*,lvalue_t*,arglist_t*,sematic_context_t*);
 bool check_argument_types(ast_node_t*,lvalue_t*,arglist_t*,sematic_context_t*);
 bool infer_call_result_type(ast_node_t*,lvalue_t*,sematic_context_t*);
 bool check_member_access(ast_node_t*,lvalue_t*,token_t*,sematic_context_t*);
 bool propagate_member_type(ast_node_t*,lvalue_t*,token_t*,sematic_context_t*);
+bool require_initialized(ast_node_t*,lvalue_noproperty_t*,sematic_context_t*);
 bool check_member_access(ast_node_t*,lvalue_noproperty_t*,token_t*,sematic_context_t*);
 bool propagate_member_type(ast_node_t*,lvalue_noproperty_t*,token_t*,sematic_context_t*);
-bool propagate_symbol_type(ast_node_t*,token_t*,sematic_context_t*);
+bool require_initialized(ast_node_t*,token_t*,sematic_context_t*);
 bool set_number_type(ast_node_t*,token_t*,sematic_context_t*);
 bool set_char_type(ast_node_t*,token_t*,sematic_context_t*);
 bool set_string_type(ast_node_t*,token_t*,sematic_context_t*);
 bool propagate_type(ast_node_t*,factor_t*,sematic_context_t*);
-bool propagate_type(ast_node_t*,ultimate_expr_t*,sematic_context_t*);
 bool propagate_type(ast_node_t*,term_t*,sematic_context_t*);
 bool propagate_type(ast_node_t*,glued_factor_t*,sematic_context_t*);
 bool propagate_type(ast_node_t*,assign_expr_t*,sematic_context_t*);
-bool propagate_type(ast_node_t*,logic_expr_or_t*,sematic_context_t*);
-bool propagate_type(ast_node_t*,logic_expr_eq_t*,sematic_context_t*);
-bool propagate_type(ast_node_t*,lvalue_noproperty_t*,sematic_context_t*);
 bool check_valid_type(ast_node_t*,composed_type_t*,sematic_context_t*);
+bool resolve_type_name(ast_node_t*,token_t*,sematic_context_t*);
+bool set_named_type(ast_node_t*,token_t*,sematic_context_t*);
 bool require_integer(ast_node_t*,ultimate_expr_t*,sematic_context_t*);
 bool require_constant_expression(ast_node_t*,ultimate_expr_t*,sematic_context_t*);
 bool require_positive(ast_node_t*,ultimate_expr_t*,sematic_context_t*);
 bool require_function_context(ast_node_t*,sematic_context_t*);
 bool check_empty_return_type(ast_node_t*,sematic_context_t*);
 bool check_match_return_type(ast_node_t*,ultimate_expr_t*,sematic_context_t*);
+bool require_boolean(ast_node_t*,ultimate_expr_t*,sematic_context_t*);
 bool require_all_paths_return(ast_node_t*,statements_t*,sematic_context_t*);
 bool check_control_flow(ast_node_t*,ultimate_expr_t*,statements_t*,elseif_else_t*,sematic_context_t*);
 bool check_control_flow(ast_node_t*,ultimate_expr_t*,statements_t*,sematic_context_t*);
 bool leave_loop_scope(ast_node_t*,sematic_context_t*);
 bool require_loop_context(ast_node_t*,sematic_context_t*);
+bool set_terminating_flow(ast_node_t*,sematic_context_t*);
+bool set_return_flow(ast_node_t*,sematic_context_t*);
+bool set_fallthrough_flow(ast_node_t*,sematic_context_t*);
+bool propagate_flow(ast_node_t*,if_t*,sematic_context_t*);
+bool propagate_flow(ast_node_t*,while_t*,sematic_context_t*);
+bool propagate_flow(ast_node_t*,statement_t*,sematic_context_t*);
 bool check_unreachable(ast_node_t*,statement_t*,statements_t*,sematic_context_t*);
+bool combine_sequential_flow(ast_node_t*,statement_t*,statements_t*,sematic_context_t*);
+bool propagate_flow(ast_node_t*,statements_t*,sematic_context_t*);
+bool propagate_flow(ast_node_t*,else_t*,sematic_context_t*);
+bool combine_branch_flow(ast_node_t*,elseif_t*,elseif_else_t*,sematic_context_t*);
 bool check_predeclare_declaration_fn(declaration_fn_t* node, sematic_context_t* context){
     if(!predeclare_function(node,node->name,node->args,node->return_type,context))return false;
     return true;
@@ -112,12 +140,16 @@ bool check_predeclare_declaration_struct(declaration_struct_t* node, sematic_con
 bool check_predeclare_function_default(function_default_t* node, sematic_context_t* context){
     if(!predeclare_function(node,node->name,node->args,node->return_type,context))return false;
 	if(!enter_function_scope(node,context))return false;
+	if(!predeclare_parameters(node,node->args,context))return false;
 	if(!visit(node->stmts,context))return false;
 	if(!leave_scope(node,context))return false;
     return true;
 }
 bool check_predeclare_struct_default(struct_default_t* node, sematic_context_t* context){
     if(!predeclare_struct(node,node->name,context))return false;
+	if(!enter_struct_scope(node,context))return false;
+	if(!predeclare_members(node,node->members,context))return false;
+	if(!leave_scope(node,context))return false;
     return true;
 }
 bool check_predeclare_if_default(if_default_t* node, sematic_context_t* context){
@@ -1146,34 +1178,23 @@ if(!visit(static_cast<arglist_nonempty_multiarg_t*>(node)->other_args,context))r
     return false;
 };
 bool check_typecheck_function_default(function_default_t* node, sematic_context_t* context){
-    if(!enter_function_scope(node,context))return false;
+    if(!enter_function_context(node,node->name,node->return_type,context))return false;
 	if(!visit(node->args,context))return false;
 	if(!visit(node->return_type,context))return false;
+	if(!check_function_type(node,node->args,node->return_type,context))return false;
 	if(!visit(node->stmts,context))return false;
-	if(!leave_scope(node,context))return false;
+	if(!leave_function_context(node,context))return false;
     return true;
 }
-bool check_typecheck_if_default(if_default_t* node, sematic_context_t* context){
-    if(!visit(node->condition,context))return false;
-	if(!require_boolean(node,node->condition,context))return false;
-	if(!visit(node->statements,context))return false;
-	if(!visit(node->rest_block,context))return false;
-    return true;
-}
-bool check_typecheck_elseif_default(elseif_default_t* node, sematic_context_t* context){
-    if(!visit(node->condition,context))return false;
-	if(!require_boolean(node,node->condition,context))return false;
-	if(!visit(node->statements,context))return false;
-    return true;
-}
-bool check_typecheck_while_default(while_default_t* node, sematic_context_t* context){
-    if(!visit(node->condition,context))return false;
-	if(!require_boolean(node,node->condition,context))return false;
-	if(!visit(node->statements,context))return false;
+bool check_typecheck_struct_default(struct_default_t* node, sematic_context_t* context){
+    if(!enter_struct_context(node,node->name,context))return false;
+	if(!visit(node->members,context))return false;
+	if(!leave_struct_context(node,context))return false;
     return true;
 }
 bool check_typecheck_definition_deftype(definition_deftype_t* node, sematic_context_t* context){
     if(!visit(node->def_type,context))return false;
+	if(!require_valid_variable_type(node,node->def_type,context))return false;
 	if(!visit(node->value,context))return false;
 	if(!check_assignable(node,node->def_type,node->value,context))return false;
 	if(!mark_initialized(node,node->name,context))return false;
@@ -1185,74 +1206,136 @@ bool check_typecheck_definition_defntype(definition_defntype_t* node, sematic_co
 	if(!mark_initialized(node,node->name,context))return false;
     return true;
 }
+bool check_typecheck_declaration_var(declaration_var_t* node, sematic_context_t* context){
+    if(!visit(node->def_type,context))return false;
+	if(!require_valid_variable_type(node,node->def_type,context))return false;
+    return true;
+}
+bool check_typecheck_declaration_fn(declaration_fn_t* node, sematic_context_t* context){
+    if(!visit(node->args,context))return false;
+	if(!visit(node->return_type,context))return false;
+	if(!check_function_type(node,node->args,node->return_type,context))return false;
+    return true;
+}
+bool check_typecheck_declaration_struct(declaration_struct_t* node, sematic_context_t* context){
+    if(!visit(node->members,context))return false;
+    return true;
+}
+bool check_typecheck_arglist_nonempty_singarg(arglist_nonempty_singarg_t* node, sematic_context_t* context){
+    if(!visit(node->arg_type,context))return false;
+	if(!require_valid_parameter_type(node,node->arg_type,context))return false;
+    return true;
+}
+bool check_typecheck_arglist_nonempty_multiarg(arglist_nonempty_multiarg_t* node, sematic_context_t* context){
+    if(!visit(node->arg_type,context))return false;
+	if(!require_valid_parameter_type(node,node->arg_type,context))return false;
+	if(!visit(node->other_args,context))return false;
+    return true;
+}
+bool check_typecheck_structmembers_singmem(structmembers_singmem_t* node, sematic_context_t* context){
+    if(!visit(node->def_type,context))return false;
+	if(!require_valid_member_type(node,node->def_type,context))return false;
+    return true;
+}
+bool check_typecheck_structmembers_multimem(structmembers_multimem_t* node, sematic_context_t* context){
+    if(!visit(node->def_type,context))return false;
+	if(!require_valid_member_type(node,node->def_type,context))return false;
+	if(!visit(node->other_members,context))return false;
+    return true;
+}
 bool check_typecheck_assign_expr_assign(assign_expr_assign_t* node, sematic_context_t* context){
     if(!visit(node->left,context))return false;
 	if(!visit(node->right,context))return false;
 	if(!require_modifiable_lvalue(node,node->left,context))return false;
 	if(!check_assignable(node,node->left,node->right,context))return false;
+	if(!mark_lvalue_initialized(node,node->left,context))return false;
+	if(!propagate_type(node,node->left,context))return false;
     return true;
 }
 bool check_typecheck_assign_expr_plus_assign(assign_expr_plus_assign_t* node, sematic_context_t* context){
     if(!visit(node->left,context))return false;
 	if(!visit(node->right,context))return false;
 	if(!require_modifiable_lvalue(node,node->left,context))return false;
+	if(!require_initialized(node,node->left,context))return false;
 	if(!check_addable(node,node->left,node->right,context))return false;
+	if(!propagate_type(node,node->left,context))return false;
     return true;
 }
 bool check_typecheck_assign_expr_minus_assign(assign_expr_minus_assign_t* node, sematic_context_t* context){
     if(!visit(node->left,context))return false;
 	if(!visit(node->right,context))return false;
 	if(!require_modifiable_lvalue(node,node->left,context))return false;
+	if(!require_initialized(node,node->left,context))return false;
 	if(!check_minusable(node,node->left,node->right,context))return false;
+	if(!propagate_type(node,node->left,context))return false;
     return true;
 }
 bool check_typecheck_assign_expr_mul_assign(assign_expr_mul_assign_t* node, sematic_context_t* context){
     if(!visit(node->left,context))return false;
 	if(!visit(node->right,context))return false;
 	if(!require_modifiable_lvalue(node,node->left,context))return false;
+	if(!require_initialized(node,node->left,context))return false;
 	if(!check_mulable(node,node->left,node->right,context))return false;
+	if(!propagate_type(node,node->left,context))return false;
     return true;
 }
 bool check_typecheck_assign_expr_div_assign(assign_expr_div_assign_t* node, sematic_context_t* context){
     if(!visit(node->left,context))return false;
 	if(!visit(node->right,context))return false;
 	if(!require_modifiable_lvalue(node,node->left,context))return false;
+	if(!require_initialized(node,node->left,context))return false;
 	if(!check_divable(node,node->left,node->right,context))return false;
+	if(!propagate_type(node,node->left,context))return false;
     return true;
 }
 bool check_typecheck_assign_expr_mod_assign(assign_expr_mod_assign_t* node, sematic_context_t* context){
     if(!visit(node->left,context))return false;
 	if(!visit(node->right,context))return false;
 	if(!require_modifiable_lvalue(node,node->left,context))return false;
+	if(!require_initialized(node,node->left,context))return false;
 	if(!check_modable(node,node->left,node->right,context))return false;
+	if(!propagate_type(node,node->left,context))return false;
     return true;
 }
 bool check_typecheck_assign_expr_bitand_assign(assign_expr_bitand_assign_t* node, sematic_context_t* context){
     if(!visit(node->left,context))return false;
 	if(!visit(node->right,context))return false;
 	if(!require_modifiable_lvalue(node,node->left,context))return false;
+	if(!require_initialized(node,node->left,context))return false;
 	if(!check_bitandable(node,node->left,node->right,context))return false;
+	if(!propagate_type(node,node->left,context))return false;
     return true;
 }
 bool check_typecheck_assign_expr_bitor_assign(assign_expr_bitor_assign_t* node, sematic_context_t* context){
     if(!visit(node->left,context))return false;
 	if(!visit(node->right,context))return false;
 	if(!require_modifiable_lvalue(node,node->left,context))return false;
+	if(!require_initialized(node,node->left,context))return false;
 	if(!check_bitorable(node,node->left,node->right,context))return false;
+	if(!propagate_type(node,node->left,context))return false;
     return true;
 }
 bool check_typecheck_assign_expr_shiftleft_assign(assign_expr_shiftleft_assign_t* node, sematic_context_t* context){
     if(!visit(node->left,context))return false;
 	if(!visit(node->right,context))return false;
 	if(!require_modifiable_lvalue(node,node->left,context))return false;
+	if(!require_initialized(node,node->left,context))return false;
 	if(!check_shiftleftable(node,node->left,node->right,context))return false;
+	if(!propagate_type(node,node->left,context))return false;
     return true;
 }
 bool check_typecheck_assign_expr_shiftright_assign(assign_expr_shiftright_assign_t* node, sematic_context_t* context){
     if(!visit(node->left,context))return false;
 	if(!visit(node->right,context))return false;
 	if(!require_modifiable_lvalue(node,node->left,context))return false;
+	if(!require_initialized(node,node->left,context))return false;
 	if(!check_shiftrightable(node,node->left,node->right,context))return false;
+	if(!propagate_type(node,node->left,context))return false;
+    return true;
+}
+bool check_typecheck_assign_expr_logic_expr(assign_expr_logic_expr_t* node, sematic_context_t* context){
+    if(!visit(node->expr,context))return false;
+	if(!propagate_type(node,node->expr,context))return false;
     return true;
 }
 bool check_typecheck_logic_expr_eq_eq(logic_expr_eq_eq_t* node, sematic_context_t* context){
@@ -1305,11 +1388,6 @@ bool check_typecheck_logic_expr_or_or(logic_expr_or_or_t* node, sematic_context_
 	if(!set_boolean_type(node,context))return false;
     return true;
 }
-bool check_typecheck_logic_expr_or_none(logic_expr_or_none_t* node, sematic_context_t* context){
-    if(!visit(node->expr,context))return false;
-	if(!propagate_type(node,node->expr,context))return false;
-    return true;
-}
 bool check_typecheck_logic_expr_and_and(logic_expr_and_and_t* node, sematic_context_t* context){
     if(!visit(node->left,context))return false;
 	if(!visit(node->right,context))return false;
@@ -1319,6 +1397,16 @@ bool check_typecheck_logic_expr_and_and(logic_expr_and_and_t* node, sematic_cont
     return true;
 }
 bool check_typecheck_logic_expr_and_none(logic_expr_and_none_t* node, sematic_context_t* context){
+    if(!visit(node->expr,context))return false;
+	if(!propagate_type(node,node->expr,context))return false;
+    return true;
+}
+bool check_typecheck_logic_expr_or_none(logic_expr_or_none_t* node, sematic_context_t* context){
+    if(!visit(node->expr,context))return false;
+	if(!propagate_type(node,node->expr,context))return false;
+    return true;
+}
+bool check_typecheck_logic_expr_eq_none(logic_expr_eq_none_t* node, sematic_context_t* context){
     if(!visit(node->expr,context))return false;
 	if(!propagate_type(node,node->expr,context))return false;
     return true;
@@ -1431,8 +1519,24 @@ bool check_typecheck_single_op_factor_not(single_op_factor_not_t* node, sematic_
 }
 bool check_typecheck_lvalue_noproperty_deref(lvalue_noproperty_deref_t* node, sematic_context_t* context){
     if(!visit(node->derefee,context))return false;
+	if(!require_initialized(node,node->derefee,context))return false;
 	if(!require_pointer(node,node->derefee,context))return false;
 	if(!infer_pointee_type(node,node->derefee,context))return false;
+    return true;
+}
+bool check_typecheck_lvalue_noproperty_parened(lvalue_noproperty_parened_t* node, sematic_context_t* context){
+    if(!visit(node->expr,context))return false;
+	if(!require_lvalue(node,node->expr,context))return false;
+	if(!propagate_type(node,node->expr,context))return false;
+    return true;
+}
+bool check_typecheck_lvalue_noproperty_id(lvalue_noproperty_id_t* node, sematic_context_t* context){
+    if(!propagate_symbol_type(node,node->id,context))return false;
+    return true;
+}
+bool check_typecheck_lvalue_noprop(lvalue_noprop_t* node, sematic_context_t* context){
+    if(!visit(node->expr,context))return false;
+	if(!propagate_type(node,node->expr,context))return false;
     return true;
 }
 bool check_typecheck_glued_factor_call(glued_factor_call_t* node, sematic_context_t* context){
@@ -1446,18 +1550,21 @@ bool check_typecheck_glued_factor_call(glued_factor_call_t* node, sematic_contex
 }
 bool check_typecheck_glued_factor_def(glued_factor_def_t* node, sematic_context_t* context){
     if(!visit(node->left,context))return false;
+	if(!require_initialized(node,node->left,context))return false;
 	if(!check_member_access(node,node->left,node->right,context))return false;
 	if(!propagate_member_type(node,node->left,node->right,context))return false;
     return true;
 }
 bool check_typecheck_lvalue_prop(lvalue_prop_t* node, sematic_context_t* context){
     if(!visit(node->left,context))return false;
+	if(!require_initialized(node,node->left,context))return false;
 	if(!check_member_access(node,node->left,node->right,context))return false;
 	if(!propagate_member_type(node,node->left,node->right,context))return false;
     return true;
 }
 bool check_typecheck_factor_id(factor_id_t* node, sematic_context_t* context){
     if(!propagate_symbol_type(node,node->value,context))return false;
+	if(!require_initialized(node,node->value,context))return false;
     return true;
 }
 bool check_typecheck_factor_num(factor_num_t* node, sematic_context_t* context){
@@ -1502,29 +1609,14 @@ bool check_typecheck_ultimate_expr_def(ultimate_expr_def_t* node, sematic_contex
 	if(!propagate_type(node,node->expr,context))return false;
     return true;
 }
-bool check_typecheck_logic_expr_eq_none(logic_expr_eq_none_t* node, sematic_context_t* context){
-    if(!visit(node->expr,context))return false;
-	if(!propagate_type(node,node->expr,context))return false;
-    return true;
-}
-bool check_typecheck_assign_expr_logic_expr(assign_expr_logic_expr_t* node, sematic_context_t* context){
-    if(!visit(node->expr,context))return false;
-	if(!propagate_type(node,node->expr,context))return false;
-    return true;
-}
-bool check_typecheck_lvalue_noproperty_parened(lvalue_noproperty_parened_t* node, sematic_context_t* context){
-    if(!visit(node->expr,context))return false;
-	if(!propagate_type(node,node->expr,context))return false;
-    return true;
-}
-bool check_typecheck_lvalue_noprop(lvalue_noprop_t* node, sematic_context_t* context){
-    if(!visit(node->expr,context))return false;
-	if(!propagate_type(node,node->expr,context))return false;
-    return true;
-}
 bool check_typecheck_composed_type_paren(composed_type_paren_t* node, sematic_context_t* context){
     if(!visit(node->inner_type,context))return false;
 	if(!check_valid_type(node,node->inner_type,context))return false;
+    return true;
+}
+bool check_typecheck_composed_type_raw_type(composed_type_raw_type_t* node, sematic_context_t* context){
+    if(!resolve_type_name(node,node->inner_type,context))return false;
+	if(!set_named_type(node,node->inner_type,context))return false;
     return true;
 }
 bool check_typecheck_composed_type_ptr(composed_type_ptr_t* node, sematic_context_t* context){
@@ -1557,6 +1649,25 @@ bool check_typecheck_statement_return_sth(statement_return_sth_t* node, sematic_
 	if(!check_match_return_type(node,node->value,context))return false;
     return true;
 }
+bool check_typecheck_if_default(if_default_t* node, sematic_context_t* context){
+    if(!visit(node->condition,context))return false;
+	if(!require_boolean(node,node->condition,context))return false;
+	if(!visit(node->statements,context))return false;
+	if(!visit(node->rest_block,context))return false;
+    return true;
+}
+bool check_typecheck_elseif_default(elseif_default_t* node, sematic_context_t* context){
+    if(!visit(node->condition,context))return false;
+	if(!require_boolean(node,node->condition,context))return false;
+	if(!visit(node->statements,context))return false;
+    return true;
+}
+bool check_typecheck_while_default(while_default_t* node, sematic_context_t* context){
+    if(!visit(node->condition,context))return false;
+	if(!require_boolean(node,node->condition,context))return false;
+	if(!visit(node->statements,context))return false;
+    return true;
+}
 bool typecheck_check(ast_node_t* node,sematic_context_t* context){
     switch(node->get_kind()){
     
@@ -1564,16 +1675,8 @@ bool typecheck_check(ast_node_t* node,sematic_context_t* context){
         return check_typecheck_function_default(static_cast<function_default_t*>(node),context);
         break;
 
-    case NODE_IF_DEFAULT:
-        return check_typecheck_if_default(static_cast<if_default_t*>(node),context);
-        break;
-
-    case NODE_ELSEIF_DEFAULT:
-        return check_typecheck_elseif_default(static_cast<elseif_default_t*>(node),context);
-        break;
-
-    case NODE_WHILE_DEFAULT:
-        return check_typecheck_while_default(static_cast<while_default_t*>(node),context);
+    case NODE_STRUCT_DEFAULT:
+        return check_typecheck_struct_default(static_cast<struct_default_t*>(node),context);
         break;
 
     case NODE_DEFINITION_DEFTYPE:
@@ -1582,6 +1685,34 @@ bool typecheck_check(ast_node_t* node,sematic_context_t* context){
 
     case NODE_DEFINITION_DEFNTYPE:
         return check_typecheck_definition_defntype(static_cast<definition_defntype_t*>(node),context);
+        break;
+
+    case NODE_DECLARATION_VAR:
+        return check_typecheck_declaration_var(static_cast<declaration_var_t*>(node),context);
+        break;
+
+    case NODE_DECLARATION_FN:
+        return check_typecheck_declaration_fn(static_cast<declaration_fn_t*>(node),context);
+        break;
+
+    case NODE_DECLARATION_STRUCT:
+        return check_typecheck_declaration_struct(static_cast<declaration_struct_t*>(node),context);
+        break;
+
+    case NODE_ARGLIST_NONEMPTY_SINGARG:
+        return check_typecheck_arglist_nonempty_singarg(static_cast<arglist_nonempty_singarg_t*>(node),context);
+        break;
+
+    case NODE_ARGLIST_NONEMPTY_MULTIARG:
+        return check_typecheck_arglist_nonempty_multiarg(static_cast<arglist_nonempty_multiarg_t*>(node),context);
+        break;
+
+    case NODE_STRUCTMEMBERS_SINGMEM:
+        return check_typecheck_structmembers_singmem(static_cast<structmembers_singmem_t*>(node),context);
+        break;
+
+    case NODE_STRUCTMEMBERS_MULTIMEM:
+        return check_typecheck_structmembers_multimem(static_cast<structmembers_multimem_t*>(node),context);
         break;
 
     case NODE_ASSIGN_EXPR_ASSIGN:
@@ -1624,6 +1755,10 @@ bool typecheck_check(ast_node_t* node,sematic_context_t* context){
         return check_typecheck_assign_expr_shiftright_assign(static_cast<assign_expr_shiftright_assign_t*>(node),context);
         break;
 
+    case NODE_ASSIGN_EXPR_LOGIC_EXPR:
+        return check_typecheck_assign_expr_logic_expr(static_cast<assign_expr_logic_expr_t*>(node),context);
+        break;
+
     case NODE_LOGIC_EXPR_EQ_EQ:
         return check_typecheck_logic_expr_eq_eq(static_cast<logic_expr_eq_eq_t*>(node),context);
         break;
@@ -1652,16 +1787,20 @@ bool typecheck_check(ast_node_t* node,sematic_context_t* context){
         return check_typecheck_logic_expr_or_or(static_cast<logic_expr_or_or_t*>(node),context);
         break;
 
-    case NODE_LOGIC_EXPR_OR_NONE:
-        return check_typecheck_logic_expr_or_none(static_cast<logic_expr_or_none_t*>(node),context);
-        break;
-
     case NODE_LOGIC_EXPR_AND_AND:
         return check_typecheck_logic_expr_and_and(static_cast<logic_expr_and_and_t*>(node),context);
         break;
 
     case NODE_LOGIC_EXPR_AND_NONE:
         return check_typecheck_logic_expr_and_none(static_cast<logic_expr_and_none_t*>(node),context);
+        break;
+
+    case NODE_LOGIC_EXPR_OR_NONE:
+        return check_typecheck_logic_expr_or_none(static_cast<logic_expr_or_none_t*>(node),context);
+        break;
+
+    case NODE_LOGIC_EXPR_EQ_NONE:
+        return check_typecheck_logic_expr_eq_none(static_cast<logic_expr_eq_none_t*>(node),context);
         break;
 
     case NODE_EXPR_ADD:
@@ -1732,6 +1871,18 @@ bool typecheck_check(ast_node_t* node,sematic_context_t* context){
         return check_typecheck_lvalue_noproperty_deref(static_cast<lvalue_noproperty_deref_t*>(node),context);
         break;
 
+    case NODE_LVALUE_NOPROPERTY_PARENED:
+        return check_typecheck_lvalue_noproperty_parened(static_cast<lvalue_noproperty_parened_t*>(node),context);
+        break;
+
+    case NODE_LVALUE_NOPROPERTY_ID:
+        return check_typecheck_lvalue_noproperty_id(static_cast<lvalue_noproperty_id_t*>(node),context);
+        break;
+
+    case NODE_LVALUE_NOPROP:
+        return check_typecheck_lvalue_noprop(static_cast<lvalue_noprop_t*>(node),context);
+        break;
+
     case NODE_GLUED_FACTOR_CALL:
         return check_typecheck_glued_factor_call(static_cast<glued_factor_call_t*>(node),context);
         break;
@@ -1784,24 +1935,12 @@ bool typecheck_check(ast_node_t* node,sematic_context_t* context){
         return check_typecheck_ultimate_expr_def(static_cast<ultimate_expr_def_t*>(node),context);
         break;
 
-    case NODE_LOGIC_EXPR_EQ_NONE:
-        return check_typecheck_logic_expr_eq_none(static_cast<logic_expr_eq_none_t*>(node),context);
-        break;
-
-    case NODE_ASSIGN_EXPR_LOGIC_EXPR:
-        return check_typecheck_assign_expr_logic_expr(static_cast<assign_expr_logic_expr_t*>(node),context);
-        break;
-
-    case NODE_LVALUE_NOPROPERTY_PARENED:
-        return check_typecheck_lvalue_noproperty_parened(static_cast<lvalue_noproperty_parened_t*>(node),context);
-        break;
-
-    case NODE_LVALUE_NOPROP:
-        return check_typecheck_lvalue_noprop(static_cast<lvalue_noprop_t*>(node),context);
-        break;
-
     case NODE_COMPOSED_TYPE_PAREN:
         return check_typecheck_composed_type_paren(static_cast<composed_type_paren_t*>(node),context);
+        break;
+
+    case NODE_COMPOSED_TYPE_RAW_TYPE:
+        return check_typecheck_composed_type_raw_type(static_cast<composed_type_raw_type_t*>(node),context);
         break;
 
     case NODE_COMPOSED_TYPE_PTR:
@@ -1824,13 +1963,17 @@ bool typecheck_check(ast_node_t* node,sematic_context_t* context){
         return check_typecheck_statement_return_sth(static_cast<statement_return_sth_t*>(node),context);
         break;
 
-    case NODE_LVALUE_NOPROPERTY_ID:
-        
-        return true;
+    case NODE_IF_DEFAULT:
+        return check_typecheck_if_default(static_cast<if_default_t*>(node),context);
+        break;
 
-    case NODE_COMPOSED_TYPE_RAW_TYPE:
-        
-        return true;
+    case NODE_ELSEIF_DEFAULT:
+        return check_typecheck_elseif_default(static_cast<elseif_default_t*>(node),context);
+        break;
+
+    case NODE_WHILE_DEFAULT:
+        return check_typecheck_while_default(static_cast<while_default_t*>(node),context);
+        break;
 
     case NODE_ELSE_DEFAULT:
         if(!visit(static_cast<else_default_t*>(node)->statements,context))return false;
@@ -1849,38 +1992,12 @@ if(!visit(static_cast<elseif_else_chain_t*>(node)->rest_block,context))return fa
         
         return true;
 
-    case NODE_STRUCTMEMBERS_SINGMEM:
-        if(!visit(static_cast<structmembers_singmem_t*>(node)->def_type,context))return false;
-        return true;
-
-    case NODE_STRUCTMEMBERS_MULTIMEM:
-        if(!visit(static_cast<structmembers_multimem_t*>(node)->def_type,context))return false;
-if(!visit(static_cast<structmembers_multimem_t*>(node)->other_members,context))return false;
-        return true;
-
     case NODE_STRUCTMEMBERS_EMPTY:
         
         return true;
 
-    case NODE_STRUCT_DEFAULT:
-        if(!visit(static_cast<struct_default_t*>(node)->members,context))return false;
-        return true;
-
     case NODE_DECLARATION_VARNTYPE:
         
-        return true;
-
-    case NODE_DECLARATION_VAR:
-        if(!visit(static_cast<declaration_var_t*>(node)->def_type,context))return false;
-        return true;
-
-    case NODE_DECLARATION_FN:
-        if(!visit(static_cast<declaration_fn_t*>(node)->args,context))return false;
-if(!visit(static_cast<declaration_fn_t*>(node)->return_type,context))return false;
-        return true;
-
-    case NODE_DECLARATION_STRUCT:
-        if(!visit(static_cast<declaration_struct_t*>(node)->members,context))return false;
         return true;
 
     case NODE_STATEMENT_EXPR:
@@ -1930,15 +2047,6 @@ if(!visit(static_cast<statements_multistmt_t*>(node)->other_stmts,context))retur
 
     case NODE_FUNC_RETURNTYPE_VOID:
         
-        return true;
-
-    case NODE_ARGLIST_NONEMPTY_SINGARG:
-        if(!visit(static_cast<arglist_nonempty_singarg_t*>(node)->arg_type,context))return false;
-        return true;
-
-    case NODE_ARGLIST_NONEMPTY_MULTIARG:
-        if(!visit(static_cast<arglist_nonempty_multiarg_t*>(node)->arg_type,context))return false;
-if(!visit(static_cast<arglist_nonempty_multiarg_t*>(node)->other_args,context))return false;
         return true;
 
     case NODE_ARGLIST_HASARG:
@@ -1991,24 +2099,88 @@ bool check_flow_while_default(while_default_t* node, sematic_context_t* context)
 }
 bool check_flow_statement_break(statement_break_t* node, sematic_context_t* context){
     if(!require_loop_context(node,context))return false;
+	if(!set_terminating_flow(node,context))return false;
     return true;
 }
 bool check_flow_statement_continue(statement_continue_t* node, sematic_context_t* context){
     if(!require_loop_context(node,context))return false;
+	if(!set_terminating_flow(node,context))return false;
     return true;
 }
 bool check_flow_statement_return_empty(statement_return_empty_t* node, sematic_context_t* context){
     if(!require_function_context(node,context))return false;
+	if(!set_return_flow(node,context))return false;
     return true;
 }
 bool check_flow_statement_return_sth(statement_return_sth_t* node, sematic_context_t* context){
     if(!require_function_context(node,context))return false;
+	if(!set_return_flow(node,context))return false;
+    return true;
+}
+bool check_flow_statement_expr(statement_expr_t* node, sematic_context_t* context){
+    if(!visit(node->expr,context))return false;
+	if(!set_fallthrough_flow(node,context))return false;
+    return true;
+}
+bool check_flow_statement_definition(statement_definition_t* node, sematic_context_t* context){
+    if(!visit(node->def,context))return false;
+	if(!set_fallthrough_flow(node,context))return false;
+    return true;
+}
+bool check_flow_statement_declaration(statement_declaration_t* node, sematic_context_t* context){
+    if(!visit(node->decl_stmt,context))return false;
+	if(!set_fallthrough_flow(node,context))return false;
+    return true;
+}
+bool check_flow_statement_if(statement_if_t* node, sematic_context_t* context){
+    if(!visit(node->if_stmt,context))return false;
+	if(!propagate_flow(node,node->if_stmt,context))return false;
+    return true;
+}
+bool check_flow_statement_while(statement_while_t* node, sematic_context_t* context){
+    if(!visit(node->while_stmt,context))return false;
+	if(!propagate_flow(node,node->while_stmt,context))return false;
+    return true;
+}
+bool check_flow_statements_stmt(statements_stmt_t* node, sematic_context_t* context){
+    if(!visit(node->stmt,context))return false;
+	if(!propagate_flow(node,node->stmt,context))return false;
     return true;
 }
 bool check_flow_statements_multistmt(statements_multistmt_t* node, sematic_context_t* context){
     if(!visit(node->stmt,context))return false;
 	if(!visit(node->other_stmts,context))return false;
 	if(!check_unreachable(node,node->stmt,node->other_stmts,context))return false;
+	if(!combine_sequential_flow(node,node->stmt,node->other_stmts,context))return false;
+    return true;
+}
+bool check_flow_statements_empty(statements_empty_t* node, sematic_context_t* context){
+    if(!set_fallthrough_flow(node,context))return false;
+    return true;
+}
+bool check_flow_else_default(else_default_t* node, sematic_context_t* context){
+    if(!visit(node->statements,context))return false;
+	if(!propagate_flow(node,node->statements,context))return false;
+    return true;
+}
+bool check_flow_elseif_default(elseif_default_t* node, sematic_context_t* context){
+    if(!visit(node->statements,context))return false;
+	if(!propagate_flow(node,node->statements,context))return false;
+    return true;
+}
+bool check_flow_elseif_else_onlyelse(elseif_else_onlyelse_t* node, sematic_context_t* context){
+    if(!visit(node->else_block,context))return false;
+	if(!propagate_flow(node,node->else_block,context))return false;
+    return true;
+}
+bool check_flow_elseif_else_chain(elseif_else_chain_t* node, sematic_context_t* context){
+    if(!visit(node->elseif_block,context))return false;
+	if(!visit(node->rest_block,context))return false;
+	if(!combine_branch_flow(node,node->elseif_block,node->rest_block,context))return false;
+    return true;
+}
+bool check_flow_elseif_else_empty(elseif_else_empty_t* node, sematic_context_t* context){
+    if(!set_fallthrough_flow(node,context))return false;
     return true;
 }
 bool flow_check(ast_node_t* node,sematic_context_t* context){
@@ -2042,8 +2214,56 @@ bool flow_check(ast_node_t* node,sematic_context_t* context){
         return check_flow_statement_return_sth(static_cast<statement_return_sth_t*>(node),context);
         break;
 
+    case NODE_STATEMENT_EXPR:
+        return check_flow_statement_expr(static_cast<statement_expr_t*>(node),context);
+        break;
+
+    case NODE_STATEMENT_DEFINITION:
+        return check_flow_statement_definition(static_cast<statement_definition_t*>(node),context);
+        break;
+
+    case NODE_STATEMENT_DECLARATION:
+        return check_flow_statement_declaration(static_cast<statement_declaration_t*>(node),context);
+        break;
+
+    case NODE_STATEMENT_IF:
+        return check_flow_statement_if(static_cast<statement_if_t*>(node),context);
+        break;
+
+    case NODE_STATEMENT_WHILE:
+        return check_flow_statement_while(static_cast<statement_while_t*>(node),context);
+        break;
+
+    case NODE_STATEMENTS_STMT:
+        return check_flow_statements_stmt(static_cast<statements_stmt_t*>(node),context);
+        break;
+
     case NODE_STATEMENTS_MULTISTMT:
         return check_flow_statements_multistmt(static_cast<statements_multistmt_t*>(node),context);
+        break;
+
+    case NODE_STATEMENTS_EMPTY:
+        return check_flow_statements_empty(static_cast<statements_empty_t*>(node),context);
+        break;
+
+    case NODE_ELSE_DEFAULT:
+        return check_flow_else_default(static_cast<else_default_t*>(node),context);
+        break;
+
+    case NODE_ELSEIF_DEFAULT:
+        return check_flow_elseif_default(static_cast<elseif_default_t*>(node),context);
+        break;
+
+    case NODE_ELSEIF_ELSE_ONLYELSE:
+        return check_flow_elseif_else_onlyelse(static_cast<elseif_else_onlyelse_t*>(node),context);
+        break;
+
+    case NODE_ELSEIF_ELSE_CHAIN:
+        return check_flow_elseif_else_chain(static_cast<elseif_else_chain_t*>(node),context);
+        break;
+
+    case NODE_ELSEIF_ELSE_EMPTY:
+        return check_flow_elseif_else_empty(static_cast<elseif_else_empty_t*>(node),context);
         break;
 
     case NODE_FACTOR_ID:
@@ -2325,28 +2545,6 @@ if(!visit(static_cast<definition_deftype_t*>(node)->value,context))return false;
         if(!visit(static_cast<definition_defntype_t*>(node)->value,context))return false;
         return true;
 
-    case NODE_ELSE_DEFAULT:
-        if(!visit(static_cast<else_default_t*>(node)->statements,context))return false;
-        return true;
-
-    case NODE_ELSEIF_DEFAULT:
-        if(!visit(static_cast<elseif_default_t*>(node)->condition,context))return false;
-if(!visit(static_cast<elseif_default_t*>(node)->statements,context))return false;
-        return true;
-
-    case NODE_ELSEIF_ELSE_ONLYELSE:
-        if(!visit(static_cast<elseif_else_onlyelse_t*>(node)->else_block,context))return false;
-        return true;
-
-    case NODE_ELSEIF_ELSE_CHAIN:
-        if(!visit(static_cast<elseif_else_chain_t*>(node)->elseif_block,context))return false;
-if(!visit(static_cast<elseif_else_chain_t*>(node)->rest_block,context))return false;
-        return true;
-
-    case NODE_ELSEIF_ELSE_EMPTY:
-        
-        return true;
-
     case NODE_STRUCTMEMBERS_SINGMEM:
         if(!visit(static_cast<structmembers_singmem_t*>(node)->def_type,context))return false;
         return true;
@@ -2379,34 +2577,6 @@ if(!visit(static_cast<declaration_fn_t*>(node)->return_type,context))return fals
 
     case NODE_DECLARATION_STRUCT:
         if(!visit(static_cast<declaration_struct_t*>(node)->members,context))return false;
-        return true;
-
-    case NODE_STATEMENT_EXPR:
-        if(!visit(static_cast<statement_expr_t*>(node)->expr,context))return false;
-        return true;
-
-    case NODE_STATEMENT_DEFINITION:
-        if(!visit(static_cast<statement_definition_t*>(node)->def,context))return false;
-        return true;
-
-    case NODE_STATEMENT_IF:
-        if(!visit(static_cast<statement_if_t*>(node)->if_stmt,context))return false;
-        return true;
-
-    case NODE_STATEMENT_WHILE:
-        if(!visit(static_cast<statement_while_t*>(node)->while_stmt,context))return false;
-        return true;
-
-    case NODE_STATEMENT_DECLARATION:
-        if(!visit(static_cast<statement_declaration_t*>(node)->decl_stmt,context))return false;
-        return true;
-
-    case NODE_STATEMENTS_STMT:
-        if(!visit(static_cast<statements_stmt_t*>(node)->stmt,context))return false;
-        return true;
-
-    case NODE_STATEMENTS_EMPTY:
-        
         return true;
 
     case NODE_FUNC_RETURNTYPE_HASTYPE:
@@ -2459,7 +2629,6 @@ bool (*passes[])(ast_node_t*,sematic_context_t*)={
 	flow_check
 };
 bool visit(ast_node_t* node,sematic_context_t* context){
-    if(node==nullptr)return true;
     return passes[context->stage](node,context);
 }
 bool do_sematic(std::vector<ast_node_t*> ast){
