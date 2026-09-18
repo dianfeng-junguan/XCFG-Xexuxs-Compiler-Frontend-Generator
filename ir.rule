@@ -1,0 +1,481 @@
+definition.deftype:
+    temp %value
+    temp %converted
+    temp %address
+    alloc $sym %address
+    visit value %value
+    cast $conversion(value) %value %converted
+    store %address %converted
+    yield_none
+definition.defntype:
+    temp %value
+    temp %address
+    alloc $sym %address
+    visit value %value
+    store %address %value
+    yield_none
+
+declaration.varntype:
+    temp %address
+    alloc $sym %address
+    yield_none
+declaration.var:
+    temp %address
+    alloc $sym %address
+    yield_none
+
+assign_expr.assign:
+    temp %address
+    temp %right
+    temp %converted
+    visit_ref left %address
+    visit right %right
+    cast $conversion(right) %right %converted
+    store %address %converted
+    yield %converted
+assign_expr.plus_assign:
+    temp %address
+    temp %left
+    temp %right
+    temp %left_converted
+    temp %right_converted
+    temp %result
+    visit_ref left %address
+    load %address %left
+    visit right %right
+    cast $conversion(left) %left %left_converted
+    cast $conversion(right) %right %right_converted
+    add %left_converted %right_converted %result
+    store %address %result
+    yield %result
+assign_expr.minus_assign:
+    temp %address
+    temp %left
+    temp %right
+    temp %left_converted
+    temp %right_converted
+    temp %result
+    visit_ref left %address
+    load %address %left
+    visit right %right
+    cast $conversion(left) %left %left_converted
+    cast $conversion(right) %right %right_converted
+    sub %left_converted %right_converted %result
+    store %address %result
+    yield %result
+assign_expr.mul_assign:
+    temp %address
+    temp %left
+    temp %right
+    temp %left_converted
+    temp %right_converted
+    temp %result
+    visit_ref left %address
+    load %address %left
+    visit right %right
+    cast $conversion(left) %left %left_converted
+    cast $conversion(right) %right %right_converted
+    mul %left_converted %right_converted %result
+    store %address %result
+    yield %result
+assign_expr.div_assign:
+    temp %address
+    temp %left
+    temp %right
+    temp %left_converted
+    temp %right_converted
+    temp %result
+    visit_ref left %address
+    load %address %left
+    visit right %right
+    cast $conversion(left) %left %left_converted
+    cast $conversion(right) %right %right_converted
+    div %left_converted %right_converted %result
+    store %address %result
+    yield %result
+assign_expr.mod_assign:
+    temp %address
+    temp %left
+    temp %right
+    temp %left_converted
+    temp %right_converted
+    temp %result
+    visit_ref left %address
+    load %address %left
+    visit right %right
+    cast $conversion(left) %left %left_converted
+    cast $conversion(right) %right %right_converted
+    mod %left_converted %right_converted %result
+    store %address %result
+    yield %result
+assign_expr.bitand_assign:
+    temp %address
+    temp %left
+    temp %right
+    temp %left_converted
+    temp %right_converted
+    temp %result
+    visit_ref left %address
+    load %address %left
+    visit right %right
+    cast $conversion(left) %left %left_converted
+    cast $conversion(right) %right %right_converted
+    bitand %left_converted %right_converted %result
+    store %address %result
+    yield %result
+assign_expr.bitor_assign:
+    temp %address
+    temp %left
+    temp %right
+    temp %left_converted
+    temp %right_converted
+    temp %result
+    visit_ref left %address
+    load %address %left
+    visit right %right
+    cast $conversion(left) %left %left_converted
+    cast $conversion(right) %right %right_converted
+    bitor %left_converted %right_converted %result
+    store %address %result
+    yield %result
+assign_expr.shiftleft_assign:
+    temp %address
+    temp %left
+    temp %right
+    temp %left_converted
+    temp %right_converted
+    temp %result
+    visit_ref left %address
+    load %address %left
+    visit right %right
+    cast $conversion(left) %left %left_converted
+    cast $conversion(right) %right %right_converted
+    shl %left_converted %right_converted %result
+    store %address %result
+    yield %result
+assign_expr.shiftright_assign:
+    temp %address
+    temp %left
+    temp %right
+    temp %left_converted
+    temp %right_converted
+    temp %result
+    visit_ref left %address
+    load %address %left
+    visit right %right
+    cast $conversion(left) %left %left_converted
+    cast $conversion(right) %right %right_converted
+    shr %left_converted %right_converted %result
+    store %address %result
+    yield %result
+assign_expr.logic_expr:
+    temp %result
+    visit expr %result
+    yield %result
+
+logic_expr_eq.eq:
+    temp %left
+    temp %right
+    temp %left_converted
+    temp %right_converted
+    temp %result
+    visit left %left
+    visit right %right
+    cast $conversion(left) %left %left_converted
+    cast $conversion(right) %right %right_converted
+    equ %left_converted %right_converted %result
+    yield %result
+logic_expr_eq.neq:
+    temp %left
+    temp %right
+    temp %left_converted
+    temp %right_converted
+    temp %result
+    visit left %left
+    visit right %right
+    cast $conversion(left) %left %left_converted
+    cast $conversion(right) %right %right_converted
+    neq %left_converted %right_converted %result
+    yield %result
+logic_expr_eq.gt:
+    temp %left
+    temp %right
+    temp %left_converted
+    temp %right_converted
+    temp %result
+    visit left %left
+    visit right %right
+    cast $conversion(left) %left %left_converted
+    cast $conversion(right) %right %right_converted
+    gt %left_converted %right_converted %result
+    yield %result
+logic_expr_eq.lt:
+    temp %left
+    temp %right
+    temp %left_converted
+    temp %right_converted
+    temp %result
+    visit left %left
+    visit right %right
+    cast $conversion(left) %left %left_converted
+    cast $conversion(right) %right %right_converted
+    lt %left_converted %right_converted %result
+    yield %result
+logic_expr_eq.ge:
+    temp %left
+    temp %right
+    temp %left_converted
+    temp %right_converted
+    temp %result
+    visit left %left
+    visit right %right
+    cast $conversion(left) %left %left_converted
+    cast $conversion(right) %right %right_converted
+    ge %left_converted %right_converted %result
+    yield %result
+logic_expr_eq.le:
+    temp %left
+    temp %right
+    temp %left_converted
+    temp %right_converted
+    temp %result
+    visit left %left
+    visit right %right
+    cast $conversion(left) %left %left_converted
+    cast $conversion(right) %right %right_converted
+    le %left_converted %right_converted %result
+    yield %result
+logic_expr_eq.none:
+    temp %result
+    visit expr %result
+    yield %result
+
+logic_expr_or.or:
+    temp %left
+    temp %result
+    visit left %left
+    if %left #true #right
+    label #true
+    or %left %left %result
+    goto #end
+    label #right
+    visit right %result
+    goto #end
+    label #end
+    yield %result
+logic_expr_or.none:
+    temp %result
+    visit expr %result
+    yield %result
+logic_expr_and.and:
+    temp %left
+    temp %result
+    visit left %left
+    if %left #right #false
+    label #right
+    visit right %result
+    goto #end
+    label #false
+    and %left %left %result
+    goto #end
+    label #end
+    yield %result
+logic_expr_and.none:
+    temp %result
+    visit expr %result
+    yield %result
+
+expr.add:
+    temp %left
+    temp %right
+    temp %left_converted
+    temp %right_converted
+    temp %result
+    visit left %left
+    visit right %right
+    cast $conversion(left) %left %left_converted
+    cast $conversion(right) %right %right_converted
+    add %left_converted %right_converted %result
+    yield %result
+expr.sub:
+    temp %left
+    temp %right
+    temp %left_converted
+    temp %right_converted
+    temp %result
+    visit left %left
+    visit right %right
+    cast $conversion(left) %left %left_converted
+    cast $conversion(right) %right %right_converted
+    sub %left_converted %right_converted %result
+    yield %result
+expr.term:
+    temp %result
+    visit expr %result
+    yield %result
+
+term.mul:
+    temp %left
+    temp %right
+    temp %left_converted
+    temp %right_converted
+    temp %result
+    visit left %left
+    visit right %right
+    cast $conversion(left) %left %left_converted
+    cast $conversion(right) %right %right_converted
+    mul %left_converted %right_converted %result
+    yield %result
+term.div:
+    temp %left
+    temp %right
+    temp %left_converted
+    temp %right_converted
+    temp %result
+    visit left %left
+    visit right %right
+    cast $conversion(left) %left %left_converted
+    cast $conversion(right) %right %right_converted
+    div %left_converted %right_converted %result
+    yield %result
+term.mod:
+    temp %left
+    temp %right
+    temp %left_converted
+    temp %right_converted
+    temp %result
+    visit left %left
+    visit right %right
+    cast $conversion(left) %left %left_converted
+    cast $conversion(right) %right %right_converted
+    mod %left_converted %right_converted %result
+    yield %result
+term.bitand:
+    temp %left
+    temp %right
+    temp %left_converted
+    temp %right_converted
+    temp %result
+    visit left %left
+    visit right %right
+    cast $conversion(left) %left %left_converted
+    cast $conversion(right) %right %right_converted
+    bitand %left_converted %right_converted %result
+    yield %result
+term.bitor:
+    temp %left
+    temp %right
+    temp %left_converted
+    temp %right_converted
+    temp %result
+    visit left %left
+    visit right %right
+    cast $conversion(left) %left %left_converted
+    cast $conversion(right) %right %right_converted
+    bitor %left_converted %right_converted %result
+    yield %result
+term.shiftleft:
+    temp %left
+    temp %right
+    temp %left_converted
+    temp %right_converted
+    temp %result
+    visit left %left
+    visit right %right
+    cast $conversion(left) %left %left_converted
+    cast $conversion(right) %right %right_converted
+    shl %left_converted %right_converted %result
+    yield %result
+term.shiftright:
+    temp %left
+    temp %right
+    temp %left_converted
+    temp %right_converted
+    temp %result
+    visit left %left
+    visit right %right
+    cast $conversion(left) %left %left_converted
+    cast $conversion(right) %right %right_converted
+    shr %left_converted %right_converted %result
+    yield %result
+term.factor:
+    temp %result
+    visit expr %result
+    yield %result
+
+single_op_factor.bitnot:
+    temp %operand
+    temp %result
+    visit expr %operand
+    bitnot %operand %result
+    yield %result
+single_op_factor.neg:
+    temp %operand
+    temp %result
+    visit expr %operand
+    minus %operand %result
+    yield %result
+single_op_factor.ref:
+    temp %result
+    visit_ref expr %result
+    yield %result
+single_op_factor.deref:
+    temp %pointer
+    temp %result
+    visit expr %pointer
+    deref %pointer %result
+    yield %result
+single_op_factor.not:
+    temp %operand
+    temp %result
+    visit expr %operand
+    negate %operand %result
+    yield %result
+single_op_factor.none:
+    temp %result
+    visit expr %result
+    yield %result
+
+power_factor.pow:
+    temp %left
+    temp %right
+    temp %left_converted
+    temp %right_converted
+    temp %result
+    visit left %left
+    visit right %right
+    cast $conversion(left) %left %left_converted
+    cast $conversion(right) %right %right_converted
+    bitxor %left_converted %right_converted %result
+    yield %result
+power_factor.none:
+    temp %result
+    visit expr %result
+    yield %result
+glued_factor.paren:
+    temp %result
+    visit expr %result
+    yield %result
+glued_factor.value:
+    temp %result
+    visit value %result
+    yield %result
+ultimate_expr.def:
+    temp %result
+    visit expr %result
+    yield %result
+
+statement.expr:
+    temp %unused
+    visit expr %unused
+    yield_none
+statement.return_empty:
+    return_none
+    yield_none
+statement.return_sth:
+    temp %value
+    temp %converted
+    visit value %value
+    cast $conversion(value) %value %converted
+    return %converted
+    yield_none

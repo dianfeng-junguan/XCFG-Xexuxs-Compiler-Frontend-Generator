@@ -296,3 +296,38 @@ return_none
 goto
 if
 ```
+
+The generated code looks like this:
+```c++
+std::vector<ir_t> ir_ruleset_rule(ruleset_rule_t* node, ir_context_t *context){
+    /*
+    
+    temp %1
+    temp %2
+    alloc $sym %2 
+    visit value %1
+    store %2 %1
+    yield_none
+    */
+    std::vector<ir_t> irs;
+    tempvar_id_t temp1=context->reg_temp();
+    tempvar_id_t temp2=context->reg_temp();
+    irs.push_back(Temp(temp1));
+    irs.push_back(Temp(temp2));
+    irs.push_back(Alloc(Symbol(node->sym),temp2));
+    ...
+    return irs;
+}
+```
+Each rule generates a function that processes specific node type and generates final IR.
+```c++
+std::vector<ir_t> irs;
+for(auto node:roots){
+    switch(node->get_kind()){
+        case NODE_RULESET_RULE:
+            irs.extend(ir_ruleset_rule(node,&context));
+            break;
+        ...
+    }
+}
+```
