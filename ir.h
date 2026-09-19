@@ -1,4 +1,6 @@
 #pragma once
+#include "sematic.h"
+#include <memory>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -10,8 +12,11 @@ public:
 
 class tempvar_t{
 public:
-    std::string name;
-    tempvar_t(std::string name):name(name){}
+    int id;
+    tempvar_t(int id):id(id){}
+    static tempvar_t empty(){
+        return tempvar_t(-1);
+    }
 };
 enum class ir_type_t{
     temp,
@@ -70,6 +75,15 @@ public:
                 return false;
         }
     }
+    bool is_rule_ending(){
+        switch(type){
+            case ir_type_t::yield:
+            case ir_type_t::yield_none:
+                return true;
+            default:
+                return false;
+        }
+    }
 };
 class ir_temp_t:public ir_t{
 public:
@@ -90,10 +104,10 @@ public:
 
 class ir_cast_t:public ir_t{
 public:
-    std::string conversion;
+    conversion_t* conversion;
     tempvar_t src;
     tempvar_t dst;
-    ir_cast_t(std::string conversion, tempvar_t src, tempvar_t dst):conversion(conversion),src(src),dst(dst){
+    ir_cast_t(conversion_t* conversion, tempvar_t src, tempvar_t dst):conversion(conversion),src(src),dst(dst){
         type=ir_type_t::cast;
     }
 };
@@ -156,9 +170,9 @@ public:
 
 class ir_alloc_t:public ir_t{
 public:
-    std::string symbol;
+    symbol_t* symbol;
     tempvar_t address;
-    ir_alloc_t(std::string symbol, tempvar_t address):symbol(symbol),address(address){
+    ir_alloc_t(symbol_t* symbol, tempvar_t address):symbol(symbol),address(address){
         type=ir_type_t::alloc;
     }
 };
@@ -266,6 +280,26 @@ public:
     tempvar_t dst;
     ir_mod_t(tempvar_t op1, tempvar_t op2, tempvar_t dst):op1(op1),op2(op2),dst(dst){
         type=ir_type_t::mod;
+    }
+};
+
+class ir_shl_t:public ir_t{
+public:
+    tempvar_t op1;
+    tempvar_t op2;
+    tempvar_t dst;
+    ir_shl_t(tempvar_t op1, tempvar_t op2, tempvar_t dst):op1(op1),op2(op2),dst(dst){
+        type=ir_type_t::shl;
+    }
+};
+
+class ir_shr_t:public ir_t{
+public:
+    tempvar_t op1;
+    tempvar_t op2;
+    tempvar_t dst;
+    ir_shr_t(tempvar_t op1, tempvar_t op2, tempvar_t dst):op1(op1),op2(op2),dst(dst){
+        type=ir_type_t::shr;
     }
 };
 
@@ -414,75 +448,139 @@ public:
         type=ir_type_t::deref;
     }
 };
-
+using basic_block_id_t = int;
 class basic_block_t{
 public:
     label_t label;
-    std::vector<basic_block_t*> successors;
-    std::vector<basic_block_t*> predecessors;
-    std::vector<ir_t> instructions;
-    void push_ir(ir_t ir){
-        if(ir.is_terminator() && !instructions.empty() && instructions.back().is_terminator()){
+    int id;
+    std::vector<basic_block_id_t> successors;
+    std::vector<basic_block_id_t> predecessors;
+    std::vector<std::unique_ptr<ir_t>> instructions;
+    basic_block_t(int id):id(id){}
+    void push_ir(ir_t *ir){
+        if(ir->is_terminator() && !instructions.empty() && instructions.back()->is_terminator()){
             throw std::runtime_error("Cannot add a terminator instruction to a basic block that already has a terminator.");
+        }else if(!instructions.empty() && instructions.back()->is_rule_ending()){
+            throw std::runtime_error("Cannot add an instruction to a basic block that already has a rule-ending instruction.");
         }
-        instructions.push_back(ir);
+        instructions.push_back(std::unique_ptr<ir_t>(ir));
     }
 };
 class ir_graph_t{
 public:
-    std::vector<basic_block_t> blocks;
-    basic_block_t* entry=nullptr;
-    basic_block_t* current_block=nullptr;
-    basic_block_t* create_block(label_t label){
-        blocks.push_back(basic_block_t{label});
-        return &blocks.back();
+    std::vector<std::unique_ptr<basic_block_t>> blocks;
+    basic_block_id_t entry=0;
+    basic_block_id_t current_block=0;
+    int next_block_id=1;
+    basic_block_id_t create_block(){
+        blocks.push_back(std::make_unique<basic_block_t>(next_block_id++));
+        return blocks.back().get()->id;
     }
-    void connect(basic_block_t* from, basic_block_t* to){
-        from->successors.push_back(to);
-        to->predecessors.push_back(from);
+    basic_block_t *get_block(basic_block_id_t id){
+        for (const auto& block : blocks) {
+            if (block->id == id) {
+                return block.get();
+            }
+        }
+        throw std::runtime_error("Block ID not found.");
     }
-    void add_ir(ir_t ir){
-        if(current_block==nullptr){
+    void connect(basic_block_id_t from, basic_block_id_t to){
+        basic_block_t *from_block = nullptr;
+        basic_block_t *to_block = nullptr;
+        for (const auto& block : blocks) {
+            if (block->id == from) {
+                from_block = block.get();
+            } else if (block->id == to) {
+                to_block = block.get();
+            }
+        }
+        if (!from_block || !to_block) {
+            throw std::runtime_error("Invalid block ID for connection.");
+        }
+        from_block->successors.push_back(to_block->id);
+        to_block->predecessors.push_back(from_block->id);
+    }
+    void add_ir(ir_t *ir){
+        if(current_block==0){
             throw std::runtime_error("Cannot add an instruction to a null current block.");
         }
-        current_block->push_ir(ir);
+        get_block(current_block)->push_ir(ir);
     }
-    void set_current_block(basic_block_t* block){
+    void set_current_block(basic_block_id_t block){
         current_block=block;
     }
-    basic_block_t* get_current_block(){
+    basic_block_id_t get_current_block(){
         return current_block;
     }
     void set_current_label(label_t label){
-        if(current_block==nullptr){
+        if(current_block==0){
             throw std::runtime_error("Cannot set label of a null current block.");
         }
-        current_block->label=label;
+        get_block(current_block)->label=label;
     }
+};
+class ir_typedef_t{
+public:
+    symbol_t* symbol;
+    type_t* type;
+    ir_typedef_t(symbol_t* symbol, type_t* type):symbol(symbol),type(type){}
+};
+class ir_global_t{
+public:
+    symbol_t* symbol;
+    ast_node_t* initializer;
+    ir_global_t(symbol_t* symbol, ast_node_t* initializer):symbol(symbol),initializer(initializer){}
+};
+class ir_module_t{
+public:
+    std::vector<std::unique_ptr<ir_graph_t>> functions;
+    // typedefs such as structs, enums, and type aliases
+    std::vector<std::unique_ptr<ir_typedef_t>> typedefs;
+    // global variables
+    std::vector<std::unique_ptr<ir_global_t>> globals;
 };
 class ir_context_t{
 public:
-    ir_graph_t graph;
-    label_t create_label(std::string name){
-        label_t label;
-        label.id=next_label_id++;
-        label.name=name;
-        return label;
+    sematic_context_t sematic_context;
+    ir_module_t module;
+    int next_tempvar_id=0;
+    symbol_t *get_symbol(ast_node_t* node){
+        return sematic_context.get_symbol(node);
     }
-    label_t create_or_get_label(std::string name){
-        for(auto& block:graph.blocks){
-            if(block.label.name==name){
-                return block.label;
-            }
-        }
-        return create_label(name);
+    conversion_t* get_conversion(ast_node_t* node){
+        return sematic_context.get_conversion(node);
     }
-    tempvar_t create_tempvar(std::string name){
-        tempvar_t tempvar(name);
+    tempvar_t create_tempvar(){
+        tempvar_t tempvar(next_tempvar_id++);
         tempvars.push_back(tempvar);
         return tempvar;
     }
+    void push_visit(){
+        visit_stack.push_back(false);
+    }
+    void push_visit_ref(){
+        visit_stack.push_back(true);
+    }
+    void pop_visit(){
+        if(visit_stack.empty()){
+            throw std::runtime_error("Visit stack underflow.");
+        }
+        visit_stack.pop_back();
+    }
+    void pop_visit_ref(){
+        if(visit_stack.empty()){
+            throw std::runtime_error("Visit stack underflow.");
+        }
+        visit_stack.pop_back();
+    }
+    bool is_visit_ref(){
+        if(visit_stack.empty()){
+            throw std::runtime_error("Visit stack is empty.");
+        }
+        return visit_stack.back();
+    }
 private:
+    std::vector<bool> visit_stack;
     int next_label_id=0;
     std::vector<tempvar_t> tempvars;
 };

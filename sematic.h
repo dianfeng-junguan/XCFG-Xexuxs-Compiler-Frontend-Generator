@@ -78,6 +78,25 @@ public:
         throw std::out_of_range("Invalid symbol ID");
     }
 };
+/**
+ * @brief Represents a type in the semantic analysis phase.
+ * If you want to add a new type, you should extend this class with additional properties and methods as needed.
+*/
+class type_t{
+public:
+    std::string name;
+    size_t size;
+    size_t alignment;
+    // Additional type information can be added here, such as size, alignment, etc.
+    type_t(const std::string& name):name(name){}
+};
+class conversion_t{
+public:
+    std::string name;
+    type_t *from_type;
+    type_t *to_type;
+    conversion_t(const std::string& name, type_t *from_type, type_t *to_type):name(name),from_type(from_type),to_type(to_type){}
+};
 class sematic_context_t{
 public:
     // symbol tables.
@@ -104,7 +123,43 @@ public:
     std::vector<sematic_init_set_t> function_init_stack;
     // Human-readable errors and warnings produced by semantic actions.
     std::vector<std::string> diagnostics;
+    // Type information.
+    std::vector<type_t> types;
+    // Conversion information.
+    std::vector<conversion_t> conversions;
+    // conversions needed.
+    std::unordered_map<ast_node_t*, conversion_t*> needed_conversions;
 
+    void register_type(type_t type) {
+        types.push_back(type);
+    }
+    void register_conversion(conversion_t conversion) {
+        conversions.push_back(conversion);
+    }
+    void register_needed_conversion(ast_node_t* node, conversion_t* conversion) {
+        needed_conversions[node] = conversion;
+    }
+    conversion_t* get_conversion(ast_node_t* node) {
+        auto it = needed_conversions.find(node);
+        if (it != needed_conversions.end()) {
+            return it->second;
+        }
+        return nullptr;
+    }
+
+    // Get the symbol associated with an AST node.
+    symbol_t *get_symbol(ast_node_t* node){
+        auto it = resolved_symbols.find(node);
+        if (it != resolved_symbols.end()) {
+            sematic_symbol_id_t id = it->second;
+            for (auto& table : symbol_tables) {
+                if (id < table.symbols.size()) {
+                    return &table.symbols[id];
+                }
+            }
+        }
+        return nullptr;
+    }
     // Start a completely new semantic analysis.
     // This removes persistent symbol bindings, initialization facts and diagnostics.
     void reset_analysis() {

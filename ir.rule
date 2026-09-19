@@ -253,6 +253,9 @@ logic_expr_eq.none:
 logic_expr_or.or:
     temp %left
     temp %result
+    decllabel #true
+    decllabel #right
+    decllabel #end
     visit left %left
     if %left #true #right
     label #true
@@ -270,6 +273,9 @@ logic_expr_or.none:
 logic_expr_and.and:
     temp %left
     temp %result
+    decllabel #right
+    decllabel #false
+    decllabel #end
     visit left %left
     if %left #right #false
     label #right

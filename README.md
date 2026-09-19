@@ -268,7 +268,9 @@ The format of `symbol` is `$name`.
 
 `goto <label>`: to jump to a label.
 
-`label <label>`: to declare a label. The name format of a label is `#label`. Note that a scope of a label is restricted in the node rule, and you cannot refer to it in another node rule in the rule file. This is just for rule file. In actual IRs, you can use function to refer to labels from far away as long as you store them in the context ahead.
+`decllabel <label>`: to declare a label. A label should be declared before being used.
+
+`label <label>`: to indicate that a new basic_block named `label` has started. The name format of a label is `#label`. Note that a scope of a label is restricted in the node rule, and you cannot refer to it in another node rule in the rule file. This is just for rule file. In actual IRs, you can use function to refer to labels from far away as long as you store them in the context ahead.
 
 Besides, there are built-in operations:
 

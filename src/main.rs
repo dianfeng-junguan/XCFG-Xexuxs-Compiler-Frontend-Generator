@@ -34,5 +34,5 @@ fn main() {
     let lexer_code=generate_lexer_source(lexer_rules);
     let parser_code=generate_parser_source(&parser_rules);
     let sematic_code=generate_sematic_code(passes, &parser_rules).unwrap();
-    let ir_code=generate_ir_source(&ir_rules).unwrap();
+    let ir_code=generate_ir_source(&ir_rules,&parser_rules).unwrap();
 }
