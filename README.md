@@ -299,7 +299,7 @@ if
 
 The generated code looks like this:
 ```c++
-std::vector<ir_t> ir_ruleset_rule(ruleset_rule_t* node, ir_context_t *context){
+tempvar_t *ir_ruleset_rule(ruleset_rule_t* node, ir_graph_t *graph,ir_context_t *context){
     /*
     
     temp %1
@@ -307,16 +307,21 @@ std::vector<ir_t> ir_ruleset_rule(ruleset_rule_t* node, ir_context_t *context){
     alloc $sym %2 
     visit value %1
     store %2 %1
-    yield_none
-    */
-    std::vector<ir_t> irs;
-    tempvar_id_t temp1=context->reg_temp();
-    tempvar_id_t temp2=context->reg_temp();
-    irs.push_back(Temp(temp1));
-    irs.push_back(Temp(temp2));
-    irs.push_back(Alloc(Symbol(node->sym),temp2));
     ...
-    return irs;
+    yield %1
+    */
+    tempvar_t* temp1=context->reg_temp();
+    tempvar_t* temp2=context->reg_temp();
+    graph->add_ir(Temp(temp1));
+    graph->add_ir(Temp(temp2));
+    graph->add_ir(Alloc(Symbol(node->sym),temp2));
+    ...
+    basic_block_t *old_block=graph->get_current_block();
+    basic_block_t *new_block=graph->new_block();
+    graph->connect(old_block,new_block);
+    graph->set_current_block(new_block);
+    ...
+    return temp1;
 }
 ```
 Each rule generates a function that processes specific node type and generates final IR.

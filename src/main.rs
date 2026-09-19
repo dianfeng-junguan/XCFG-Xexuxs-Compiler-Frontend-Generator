@@ -1,6 +1,6 @@
 use std::{eprint, fs::File, io::{Error, Read, Write}, println};
 
-use crate::{lexer::{generate_lexer_source, parse_lexer_rules}, parser::{generate_parser_source, parse_parser_rules}};
+use crate::{ir::{generate_ir_source, parse_ir_rule}, lexer::{generate_lexer_source, parse_lexer_rules}, parser::{generate_parser_source, parse_parser_rules}, sematic::{generate_sematic_code, parse_sematic_rules}};
 
 pub mod lexer;
 pub mod parser;
@@ -29,6 +29,10 @@ fn main() {
     }
     let parser_rules=parse_parser_rules("parser.rule");
     let lexer_rules=lexer_rules.unwrap();
+    let passes=&parse_sematic_rules("sematic.rule", &parser_rules);
+    let ir_rules=parse_ir_rule("ir.rule").unwrap();
     let lexer_code=generate_lexer_source(lexer_rules);
-    let parser_code=generate_parser_source(parser_rules);
+    let parser_code=generate_parser_source(&parser_rules);
+    let sematic_code=generate_sematic_code(passes, &parser_rules).unwrap();
+    let ir_code=generate_ir_source(&ir_rules).unwrap();
 }

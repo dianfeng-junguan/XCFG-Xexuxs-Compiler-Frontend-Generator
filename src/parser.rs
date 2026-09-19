@@ -451,9 +451,9 @@ pub fn parse_parser_rules(path:&str)->Vec<ParserRuleSet>{
 #[test]
 fn test_generate_parser_source(){
     let parser_rules=parse_parser_rules("parser.rule");
-    generate_parser_source(parser_rules);
+    generate_parser_source(&parser_rules);
 }
-pub fn generate_parser_source(ruleset:Vec<ParserRuleSet>)->String{
+pub fn generate_parser_source(ruleset:&Vec<ParserRuleSet>)->String{
     let mut src=String::new();
     // vector of ruleset class name
     let mut ruleset_classdefs=Vec::new();

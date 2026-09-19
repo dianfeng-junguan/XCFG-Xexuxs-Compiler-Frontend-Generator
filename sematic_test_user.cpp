@@ -81,9 +81,6 @@ bool require_valid_variable_type(ast_node_t*,composed_type_t*,sematic_context_t*
 bool check_assignable(ast_node_t*,composed_type_t*,ultimate_expr_t*,sematic_context_t*){
 	return true;
 }
-bool mark_initialized(ast_node_t*,token_t*,sematic_context_t*){
-	return true;
-}
 bool infer_variable_type(ast_node_t*,token_t*,ultimate_expr_t*,sematic_context_t*){
 	return true;
 }
@@ -99,13 +96,7 @@ bool require_modifiable_lvalue(ast_node_t*,lvalue_t*,sematic_context_t*){
 bool check_assignable(ast_node_t*,lvalue_t*,assign_expr_t*,sematic_context_t*){
 	return true;
 }
-bool mark_lvalue_initialized(ast_node_t*,lvalue_t*,sematic_context_t*){
-	return true;
-}
 bool propagate_type(ast_node_t*,lvalue_t*,sematic_context_t*){
-	return true;
-}
-bool require_initialized(ast_node_t*,lvalue_t*,sematic_context_t*){
 	return true;
 }
 bool check_addable(ast_node_t*,lvalue_t*,assign_expr_t*,sematic_context_t*){
@@ -267,16 +258,10 @@ bool check_member_access(ast_node_t*,lvalue_t*,token_t*,sematic_context_t*){
 bool propagate_member_type(ast_node_t*,lvalue_t*,token_t*,sematic_context_t*){
 	return true;
 }
-bool require_initialized(ast_node_t*,lvalue_noproperty_t*,sematic_context_t*){
-	return true;
-}
 bool check_member_access(ast_node_t*,lvalue_noproperty_t*,token_t*,sematic_context_t*){
 	return true;
 }
 bool propagate_member_type(ast_node_t*,lvalue_noproperty_t*,token_t*,sematic_context_t*){
-	return true;
-}
-bool require_initialized(ast_node_t*,token_t*,sematic_context_t*){
 	return true;
 }
 bool set_number_type(ast_node_t*,token_t*,sematic_context_t*){
@@ -328,6 +313,69 @@ bool check_match_return_type(ast_node_t*,ultimate_expr_t*,sematic_context_t*){
 	return true;
 }
 bool require_boolean(ast_node_t*,ultimate_expr_t*,sematic_context_t*){
+	return true;
+}
+bool begin_definite_function(ast_node_t*,sematic_context_t*){
+	return true;
+}
+bool mark_parameters_initialized(ast_node_t*,arglist_t*,sematic_context_t*){
+	return true;
+}
+bool end_definite_function(ast_node_t*,sematic_context_t*){
+	return true;
+}
+bool mark_initialized(ast_node_t*,token_t*,sematic_context_t*){
+	return true;
+}
+bool mark_uninitialized(ast_node_t*,token_t*,sematic_context_t*){
+	return true;
+}
+bool push_write_access(ast_node_t*,sematic_context_t*){
+	return true;
+}
+bool pop_access_mode(ast_node_t*,sematic_context_t*){
+	return true;
+}
+bool mark_lvalue_initialized(ast_node_t*,lvalue_t*,sematic_context_t*){
+	return true;
+}
+bool push_read_access(ast_node_t*,sematic_context_t*){
+	return true;
+}
+bool push_address_access(ast_node_t*,sematic_context_t*){
+	return true;
+}
+bool require_initialized_if_read(ast_node_t*,token_t*,sematic_context_t*){
+	return true;
+}
+bool begin_optional_init(ast_node_t*,sematic_context_t*){
+	return true;
+}
+bool end_optional_init(ast_node_t*,sematic_context_t*){
+	return true;
+}
+bool begin_conditional_init(ast_node_t*,sematic_context_t*){
+	return true;
+}
+bool begin_init_branch(ast_node_t*,sematic_context_t*){
+	return true;
+}
+bool end_init_branch(ast_node_t*,sematic_context_t*){
+	return true;
+}
+bool end_conditional_init(ast_node_t*,sematic_context_t*){
+	return true;
+}
+bool record_implicit_init_branch(ast_node_t*,sematic_context_t*){
+	return true;
+}
+bool save_init_condition_fallthrough(ast_node_t*,sematic_context_t*){
+	return true;
+}
+bool begin_loop_init(ast_node_t*,sematic_context_t*){
+	return true;
+}
+bool end_loop_init(ast_node_t*,sematic_context_t*){
 	return true;
 }
 bool require_all_paths_return(ast_node_t*,statements_t*,sematic_context_t*){

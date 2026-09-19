@@ -2,7 +2,7 @@
 
 use regex::regex;
 
-use crate::read_from_file;
+use crate::{read_from_file, write_to_file};
 
 enum TempVarType {
     Value,
@@ -17,6 +17,9 @@ struct TempVar{
 impl TempVar {
     fn new(name:&str, vartype:TempVarType) -> Self {
         Self { name: name.to_string(), vartype }
+    }
+    fn var_name(&self)->String {
+        format!("temp_{}",self.name)
     }
 }
 struct ConversionPos{
@@ -34,6 +37,9 @@ struct Label{
 impl Label {
     fn new(name:&str) -> Self {
         Self { name: name.to_string() }
+    }
+    fn var_name(&self)->String {
+        format!("label_{}",self.name)
     }
 }
 enum IRInstruction {
@@ -77,8 +83,129 @@ enum IRInstruction {
     Minus{op:TempVar, dst:TempVar},
     Deref{op:TempVar, dst:TempVar},
 }
+impl IRInstruction {
+    fn generate_code(&self,rule:&IRRule)->String{
+        let mut code=String::new();
+        match self {
+            IRInstruction::Temp(var)=>{
+                code.push_str(&format!("tempvar_t {}=context->create_tempvar(\"{}\");\n",var.var_name(),var.var_name()));
+            },
+            IRInstruction::Cast { conversion_pos, src, dst }=>{
+                // Keep the conversion name visible in the generated C++ so later lowering can resolve it.
+                code.push_str(&format!("graph->add_ir(ir_cast_t(\"{}({})\", {}, {}));\n",conversion_pos.node_type_str,conversion_pos.member_name,src.var_name(),dst.var_name()));
+            }
+            IRInstruction::Visit { node, result }=>{
+                code.push_str(&format!("{}=visit(static_cast<{}_{}_t*>(node)->{},graph,context);\n",result.var_name(),rule.ruleset,rule.rule,node));
+            }
+            IRInstruction::VisitRef { node, result }=>{
+                code.push_str(&format!("{}=visit_ref(static_cast<{}_{}_t*>(node)->{},graph,context);\n",result.var_name(),rule.ruleset,rule.rule,node));
+            }
+            IRInstruction::Store { address, dest }=>{
+                code.push_str(&format!("graph->add_ir(ir_store_t({},{}));\n",address.var_name(),dest.var_name()));
+            }
+            IRInstruction::Load { address, from }=>{
+                code.push_str(&format!("graph->add_ir(ir_load_t({},{}));\n",address.var_name(),from.var_name()));
+            }
+            IRInstruction::Call { function, args, result }=>{
+                let args_str=args.iter().map(|t| t.var_name()).collect::<Vec<String>>().join(",");
+                if result.name.is_empty() {
+                    code.push_str(&format!("graph->add_ir(ir_call_t(\"{}\",{{{}}}, tempvar_t(\"\")));\n",function,args_str));
+                } else {
+                    code.push_str(&format!("graph->add_ir(ir_call_t(\"{}\",{{{}}}, {}));\n",function,args_str,result.var_name()));
+                }
+            }
+            IRInstruction::CallValue { function, args, result }=>{
+                let args_str=args.iter().map(|t| t.var_name()).collect::<Vec<String>>().join(",");
+                if result.name.is_empty() {
+                    code.push_str(&format!("graph->add_ir(ir_call_value_t({},{{{}}}, tempvar_t(\"\")));\n",function.var_name(),args_str));
+                } else {
+                    code.push_str(&format!("graph->add_ir(ir_call_value_t({},{{{}}}, {}));\n",function.var_name(),args_str,result.var_name()));
+                }
+            }
+            IRInstruction::Alloc { symbol, address }=>{
+                code.push_str(&format!("graph->add_ir(ir_alloc_t(\"{}\", {}));\n",symbol,address.var_name()));
+            }
+            IRInstruction::Yield(value)=>{
+                code.push_str(&format!("return {};\n",value.var_name()));
+            }
+            IRInstruction::YieldNone=>code.push_str("return tempvar_t(\"\");\n"),
+            IRInstruction::ReturnNone=>code.push_str("graph->add_ir(ir_return_none_t());\n"),
+            IRInstruction::Return(value)=>code.push_str(&format!("graph->add_ir(ir_return_t({}));\n",value.var_name())),
+            IRInstruction::Goto(label)=>{
+                code.push_str(&format!("label_t {}=context->create_or_get_label(\"{}\");\n",label.var_name(),label.var_name()));
+                code.push_str(&format!("graph->add_ir(ir_goto_t({}));\n",label.var_name()));
+                code.push_str("{\n\tbasic_block_t* old_block=graph->get_current_block();\n");
+                code.push_str("basic_block_t* new_block=graph->new_block();\n");
+                code.push_str("graph->connect(old_block,new_block);\n");
+                code.push_str("graph->set_current_block(new_block);\n}\n");
+            }
+            IRInstruction::Label(label)=>{
+                code.push_str(&format!("label_t {}=context->create_or_get_label(\"{}\");\n",label.var_name(),label.var_name()));
+                code.push_str(&format!("graph->set_current_label({});\n",label.var_name()));
+            }
+            IRInstruction::If { condition, true_label, false_label }=>{
+                code.push_str(&format!("graph->add_ir(ir_if_t({},context->create_or_get_label(\"{}\"),context->create_or_get_label(\"{}\")));\n",condition.var_name(),true_label.var_name(),false_label.var_name()));
+            }
+            IRInstruction::Add { op1, op2, dst }|
+            IRInstruction::Sub { op1, op2, dst }|
+            IRInstruction::Mul { op1, op2, dst }|
+            IRInstruction::Div { op1, op2, dst }|
+            IRInstruction::Mod { op1, op2, dst }|
+            IRInstruction::Shl { op1, op2, dst }|
+            IRInstruction::Shr { op1, op2, dst }|
+            IRInstruction::Bitand { op1, op2, dst }|
+            IRInstruction::Bitor { op1, op2, dst }|
+            IRInstruction::Bitxor { op1, op2, dst }|
+            IRInstruction::And { op1, op2, dst }|
+            IRInstruction::Or { op1, op2, dst }|
+            IRInstruction::Equ { op1, op2, dst }|
+            IRInstruction::Neq { op1, op2, dst }|
+            IRInstruction::Gt { op1, op2, dst }|
+            IRInstruction::Lt { op1, op2, dst }|
+            IRInstruction::Ge { op1, op2, dst }|
+            IRInstruction::Le { op1, op2, dst }=>{
+                let op_name = match self {
+                    IRInstruction::Add { .. } => "Add",
+                    IRInstruction::Sub { .. } => "Sub",
+                    IRInstruction::Mul { .. } => "Mul",
+                    IRInstruction::Div { .. } => "Div",
+                    IRInstruction::Mod { .. } => "Mod",
+                    IRInstruction::Shl { .. } => "Shl",
+                    IRInstruction::Shr { .. } => "Shr",
+                    IRInstruction::Bitand { .. } => "Bitand",
+                    IRInstruction::Bitor { .. } => "Bitor",
+                    IRInstruction::Bitxor { .. } => "Bitxor",
+                    IRInstruction::And { .. } => "And",
+                    IRInstruction::Or { .. } => "Or",
+                    IRInstruction::Equ { .. } => "Equ",
+                    IRInstruction::Neq { .. } => "Neq",
+                    IRInstruction::Gt { .. } => "Gt",
+                    IRInstruction::Lt { .. } => "Lt",
+                    IRInstruction::Ge { .. } => "Ge",
+                    IRInstruction::Le { .. } => "Le",
+                    _ => unreachable!(),
+                };
+                code.push_str(&format!("graph->add_ir(ir_{}_t({}, {}, {}));\n",op_name.to_lowercase(),op1.var_name(),op2.var_name(),dst.var_name()));
+            }
+            IRInstruction::Bitnot { op, dst }|
+            IRInstruction::Negate { op, dst }|
+            IRInstruction::Minus { op, dst }|
+            IRInstruction::Deref { op, dst }=>{
+                let op_name = match self {
+                    IRInstruction::Bitnot { .. } => "Bitnot",
+                    IRInstruction::Negate { .. } => "Negate",
+                    IRInstruction::Minus { .. } => "Minus",
+                    IRInstruction::Deref { .. } => "Deref",
+                    _ => unreachable!(),
+                };
+                code.push_str(&format!("graph->add_ir(ir_{}_t({}, {}));\n",op_name.to_lowercase(),op.var_name(),dst.var_name()));
+            }
+        }
+        code
+    }
+}
 #[allow(dead_code)]
-struct IRRule{
+pub struct IRRule{
     ruleset:String,
     rule:String,
     irs:Vec<IRInstruction>
@@ -158,7 +285,7 @@ fn render_temp(temp:&TempVar) -> String {
 }
 
 fn render_label(label:&Label) -> String {
-    format!("#{}", label.name)
+    format!("#{}", label.var_name())
 }
 
 fn render_ir_instruction(ins:&IRInstruction) -> String {
@@ -222,7 +349,7 @@ fn render_ir_instruction(ins:&IRInstruction) -> String {
     }
 }
 
-fn parse_ir_rule(path:&str)->Result<Vec<IRRule>,String>{
+pub fn parse_ir_rule(path:&str)->Result<Vec<IRRule>,String>{
     let mut rules: Vec<IRRule> = Vec::new();
     let text=read_from_file(path).map_err(|e| format!("failed to read ir rule file: {}", e))?;
     let lines=text.split('\n').collect::<Vec<&str>>();
@@ -455,13 +582,35 @@ fn parse_ir_rule(path:&str)->Result<Vec<IRRule>,String>{
     Ok(rules)
 }
 pub fn generate_ir_source(rules:&Vec<IRRule>)->Result<String,String>{
+    let mut code=read_from_file("ir_template.cpp").expect("failed to read ir_template.cpp");
+    let branches=rules.iter().map(|r| format!("\tcase NODE_{}_{}:\nreturn ir_{}_{}(node,graph,context);\n",r.ruleset.to_uppercase(),r.rule.to_uppercase(),r.ruleset,r.rule)).collect::<Vec<String>>().join("\n");
+    code=code.replace("{%}", &branches);
+    let mut funcs=String::new();
     for rule in rules.iter(){
-        
+        let mut inside_code=String::new();
+        rule.irs.iter().for_each(|ir| {
+            let ins=ir.generate_code(rule); 
+            inside_code.push_str(&ins);
+        });
+        let func=format!("
+tempvar_t ir_{}_{}({}_{}_t* node,ir_graph_t* graph,ir_context_t* context){{
+    {}
+}}
+        ",rule.ruleset,rule.rule,rule.ruleset,rule.rule,inside_code);
+        funcs.push_str(&func);
     }
-    let code=String::new();
+    code=code.replace("{funcs}", &funcs);
+    if cfg!(feature="debug") {
+        write_to_file("ir_test.cpp", &code).unwrap();
+    }
     Ok(code)
 }
 #[test]
 pub fn test_parse_ir_rules(){
     parse_ir_rule("ir.rule").unwrap();
+}
+#[test]
+pub fn test_generate_ir_source() {
+    let irr=parse_ir_rule("ir.rule").unwrap();
+    generate_ir_source(&irr).unwrap();
 }
