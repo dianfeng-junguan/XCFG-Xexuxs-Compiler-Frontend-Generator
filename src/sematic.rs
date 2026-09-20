@@ -1,4 +1,4 @@
-use std::{fmt::format, fs::{File, OpenOptions}, io::{Read, Write}};
+use std::{fmt::format, fs::{File, OpenOptions}, io::{Read, Write}, path::Path};
 
 use regex::regex;
 
@@ -82,20 +82,12 @@ impl SematicPass {
         format!("bool {}_check(ast_node_t* node,sematic_context_t* context)",self.name)
     }
 }
-pub fn parse_sematic_rules(path:&str, ruleset:&Vec<ParserRuleSet>)->Result<Vec<SematicPass>,Diagnosis> {
+pub fn parse_sematic_rules(path:&Path, ruleset:&Vec<ParserRuleSet>)->Result<Vec<SematicPass>,Diagnosis> {
     let mut diagnosis=Diagnosis::new();
-    let mut f=match File::open(path) {
-        Ok(file) => file,
-        Err(_) => {
-            diagnosis.push_err(CompgenError::new(0, 0, STAGE_SEMATIC_PARSING, "failed to open sematic rule file"));
-            return Err(diagnosis);
-        }
-    };
-    let mut rule_src=String::new();
-    if f.read_to_string(&mut rule_src).is_err() {
+    let Ok(rule_src)=read_from_file(&path) else {
         diagnosis.push_err(CompgenError::new(0, 0, STAGE_SEMATIC_PARSING, "failed to read sematic rule file"));
         return Err(diagnosis);
-    }
+    };
     let rule_src=rule_src.split("\n").map(|line| line.trim()).collect::<Vec<&str>>();
     let mut passes=Vec::new();
 
@@ -336,7 +328,7 @@ bool (*passes[])(ast_node_t*,sematic_context_t*)={{
     let src_path=envs.output_dir.join("sematic.cpp");
     let src_test_path=envs.output_dir.join("sematic_test.cpp");
     let src_test_user_path=envs.output_dir.join("sematic_test_user.cpp");
-    let header_template_path=envs.output_dir.join("sematic_template.h");
+    let header_template_path=envs.template_dir.join("sematic_template.h");
     let header_path=envs.output_dir.join("sematic.h");
 
     // read template
@@ -376,13 +368,13 @@ bool (*passes[])(ast_node_t*,sematic_context_t*)={{
 }
 #[test]
 fn test_parser_sematic_rules(){
-    let ruleset=parse_parser_rules("parser.rule").unwrap();
-    parse_sematic_rules("sematic.rule", &ruleset).unwrap();
+    let ruleset=parse_parser_rules(Path::new("parser.rule")).unwrap();
+    parse_sematic_rules(Path::new("sematic.rule"), &ruleset).unwrap();
 }
 #[test]
 fn test_generate_sematic_source() {
     let envs=Envs::default();
-    let ruleset=parse_parser_rules("parser.rule").unwrap();
-    let passes=parse_sematic_rules("sematic.rule", &ruleset).unwrap();
+    let ruleset=parse_parser_rules(Path::new("parser.rule")).unwrap();
+    let passes=parse_sematic_rules(Path::new("sematic.rule"), &ruleset).unwrap();
     let _ = generate_sematic_code(&passes,&ruleset,&envs);
 }

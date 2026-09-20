@@ -1,4 +1,4 @@
-use std::{env::join_paths, format, fs::{File, OpenOptions}, io::{Read, Write}, println};
+use std::{env::join_paths, format, fs::{File, OpenOptions}, io::{Read, Write}, path::Path, println};
 use regex;
 
 use crate::{Args, CompgenError, Diagnosis, Envs, STAGE_LEXER_CODEGEN, STAGE_LEXER_PARSING, lexer, read_from_file};
@@ -27,15 +27,10 @@ pub enum LexerCategory{
         refed_rules:Vec<String>,
     }
 }
-pub fn parse_lexer_rules(path:&str)->Result<Vec<LexerCategory>,Diagnosis>{
+pub fn parse_lexer_rules(path:&Path)->Result<Vec<LexerCategory>,Diagnosis>{
     let mut diagnosis=Diagnosis::new();
-    let Ok(mut lexer_file) = OpenOptions::new().read(true).open(path) else {
-        diagnosis.push_err(CompgenError::new(0, 0, STAGE_LEXER_PARSING, "failed to open lexer file"));
-        return Err(diagnosis);
-    };
 
-    let mut lexer_file_text=String::new();
-    let Ok(_) = lexer_file.read_to_string(&mut lexer_file_text) else {
+    let Ok(lexer_file_text) = read_from_file(path) else {
         diagnosis.push_err(CompgenError::new(0, 0, STAGE_LEXER_PARSING, "failed to read lexer file"));
         return Err(diagnosis);
     };
@@ -260,7 +255,7 @@ lexer_rule_t lexer_rules[]={{
 #[test]
 fn test_generate_lexer_source(){
     let envs=Envs::default();
-    let lexer_rules = parse_lexer_rules("lexer.rule").unwrap();
+    let lexer_rules = parse_lexer_rules(Path::new("lexer.rule")).unwrap();
     if let Err(d)=generate_lexer_source(lexer_rules,&envs){
         print!("{}",d.errs_str());
     }

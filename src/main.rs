@@ -70,7 +70,7 @@ pub fn read_to_lines(path:&Path)->Result<Vec<String>,Error>{
 #[derive(clap::Parser,Debug)]
 #[command(version,about,long_about)]
 struct Args{
-    #[arg(short,long,default_value_t=String::from("templates"))]
+    #[arg(short,long,default_value_t=String::from("template"))]
     template_dir:String,
     #[arg(short,long,default_value_t=String::from("."))]
     output_dir:String,
@@ -84,7 +84,7 @@ pub struct Envs{
 }
 impl Default for Envs {
     fn default() -> Self {
-        Self { template_dir: PathBuf::from("template/"), output_dir: PathBuf::from("."), rules_dir: PathBuf::from(".") }
+        Self { template_dir: PathBuf::from("template"), output_dir: PathBuf::from("."), rules_dir: PathBuf::from("rule") }
     }
 }
 fn main() {
@@ -94,22 +94,22 @@ fn main() {
         output_dir: PathBuf::from(args.output_dir),
         rules_dir: PathBuf::from(args.rules_dir),
     };
-    let lexerr=envs.template_dir.join("lexer.rule");
-    let parserr= envs.template_dir.join("parser.rule");
-    let sematicr=envs.template_dir.join("sematic.rule");
+    let lexerr=envs.rules_dir.join("lexer.rule");
+    let parserr= envs.rules_dir.join("parser.rule");
+    let sematicr=envs.rules_dir.join("sematic.rule");
     println!("Reading lexer.rule");
 
-    let lexer_rules=parse_lexer_rules(lexerr.to_str().unwrap());
+    let lexer_rules=parse_lexer_rules(&lexerr);
     if lexer_rules.is_err() {
         print!("{}",lexer_rules.unwrap_err().errs_str());
         return;
     }
-    let parser_rules=match parse_parser_rules(parserr.to_str().unwrap()) {
+    let parser_rules=match parse_parser_rules(&parserr) {
         Ok(rules) => rules,
         Err(d) => { d.print_errs(); return; }
     };
     let lexer_rules=lexer_rules.unwrap();
-    let passes=match parse_sematic_rules(sematicr.to_str().unwrap(), &parser_rules) {
+    let passes=match parse_sematic_rules(&sematicr, &parser_rules) {
         Ok(passes) => passes,
         Err(d) => { d.print_errs(); return; }
     };
@@ -164,17 +164,17 @@ fn main() {
 #[test]
 fn test_flow() {
     let envs=Envs::default();
-    let lexer_rules=parse_lexer_rules("lexer.rule");
+    let lexer_rules=parse_lexer_rules(Path::new("lexer.rule"));
     if lexer_rules.is_err() {
         print!("{}",lexer_rules.unwrap_err().errs_str());
         return;
     }
-    let parser_rules=match parse_parser_rules("parser.rule") {
+    let parser_rules=match parse_parser_rules(Path::new("parser.rule")) {
         Ok(rules) => rules,
         Err(d) => { d.print_errs(); return; }
     };
     let lexer_rules=lexer_rules.unwrap();
-    let passes=match parse_sematic_rules("sematic.rule", &parser_rules) {
+    let passes=match parse_sematic_rules(Path::new("sematic.rule"), &parser_rules) {
         Ok(passes) => passes,
         Err(d) => { d.print_errs(); return; }
     };

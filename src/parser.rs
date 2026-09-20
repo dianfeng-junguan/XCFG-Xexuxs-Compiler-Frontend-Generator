@@ -1,4 +1,4 @@
-use std::{cmp, collections::HashMap, fmt::{Display, Pointer, format}, format, fs::File, hash::Hash, io::{Read, Write}, println, vec, write};
+use std::{cmp, collections::HashMap, fmt::{Display, Pointer, format}, format, fs::File, hash::Hash, io::{Read, Write}, path::Path, println, vec, write};
 
 use crate::{CompgenError, Diagnosis, Envs, STAGE_PARSER_CODEGEN, read_from_file, write_to_file};
 
@@ -338,22 +338,15 @@ impl Hash for ParserRuleSet {
 }
 #[test]
 fn test_parse_parser_rules(){
-    parse_parser_rules("parser.rule");
+    parse_parser_rules(Path::new("parser.rule"));
 }
-pub fn parse_parser_rules(path:&str)->Result<Vec<ParserRuleSet>,Diagnosis>{
+pub fn parse_parser_rules(path:&Path)->Result<Vec<ParserRuleSet>,Diagnosis>{
     let mut diagnosis=Diagnosis::new();
-    let mut rule_file_text=String::new();
-    let mut rule_file=match File::open(path) {
-        Ok(file) => file,
-        Err(_) => {
-            diagnosis.push_err(CompgenError::new(0, 0, crate::STAGE_PARSER_PARSING, "failed to open parser file"));
-            return Err(diagnosis);
-        }
-    };
-    if rule_file.read_to_string(&mut rule_file_text).is_err() {
+
+    let Ok(rule_file_text)=read_from_file(path) else {
         diagnosis.push_err(CompgenError::new(0, 0, crate::STAGE_PARSER_PARSING, "failed to read parser file"));
         return Err(diagnosis);
-    }
+    };
 
     let rule_lines=rule_file_text.split("\n").collect::<Vec<&str>>();
 
@@ -468,7 +461,7 @@ pub fn parse_parser_rules(path:&str)->Result<Vec<ParserRuleSet>,Diagnosis>{
 #[test]
 fn test_generate_parser_source(){
     let envs=Envs::default();
-    match parse_parser_rules("parser.rule"){
+    match parse_parser_rules(Path::new("parser.rule")){
         Ok(parser_rules)=>{
             generate_parser_source(&parser_rules,&envs);
         }
@@ -583,7 +576,7 @@ typedef struct{
     // prepare paths
     let header_path=envs.output_dir.join("parser.h");
     let src_path=envs.output_dir.join("parser.cpp");
-    let template_path=envs.output_dir.join("parser_template.cpp");
+    let template_path=envs.template_dir.join("parser_template.cpp");
 
     // put generated code into template
     let Ok(mut template_code)=read_from_file(template_path.as_path()) else {
