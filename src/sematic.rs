@@ -2,7 +2,7 @@ use std::{fmt::format, fs::{File, OpenOptions}, io::{Read, Write}};
 
 use regex::regex;
 
-use crate::{CompgenError, Diagnosis, STAGE_SEMATIC_CODEGEN, STAGE_SEMATIC_PARSING, parser::{NodeMemberType, ParserRuleSet, parse_parser_rules}, read_from_file, write_to_file};
+use crate::{CompgenError, Diagnosis, Envs, STAGE_SEMATIC_CODEGEN, STAGE_SEMATIC_PARSING, parser::{NodeMemberType, ParserRuleSet, parse_parser_rules}, read_from_file, write_to_file};
 #[derive(Clone)]
 struct SematicFuncArgument{
     name:String,
@@ -224,7 +224,12 @@ pub fn parse_sematic_rules(path:&str, ruleset:&Vec<ParserRuleSet>)->Result<Vec<S
     }
     if diagnosis.is_empty() { Ok(passes) } else { Err(diagnosis) }
 }
-pub fn generate_sematic_code(passes:&Vec<SematicPass>,ruleset:&Vec<ParserRuleSet>)->Result<String,Diagnosis>{
+pub struct SematicSource{
+    pub sematic_h:String,
+    pub sematic_cpp:String,
+    pub sematic_user_cpp:String
+}
+pub fn generate_sematic_code(passes:&Vec<SematicPass>,ruleset:&Vec<ParserRuleSet>,envs:&Envs)->Result<SematicSource,Diagnosis>{
     let mut diagnosis=Diagnosis::new();
     let mut src=String::new();
     // collect checker funcs
@@ -327,25 +332,47 @@ pub fn generate_sematic_code(passes:&Vec<SematicPass>,ruleset:&Vec<ParserRuleSet
 bool (*passes[])(ast_node_t*,sematic_context_t*)={{
     {}
 }};",passes.iter().map(|p| format!("{}_check",p.name)).collect::<Vec<String>>().join(",\n\t")));
+    let template_cpp_path=envs.template_dir.join("sematic_template.cpp");
+    let src_path=envs.output_dir.join("sematic.cpp");
+    let src_test_path=envs.output_dir.join("sematic_test.cpp");
+    let src_test_user_path=envs.output_dir.join("sematic_test_user.cpp");
+    let header_template_path=envs.output_dir.join("sematic_template.h");
+    let header_path=envs.output_dir.join("sematic.h");
+
     // read template
-    let template_code=match read_from_file("sematic_template.cpp") {
+    let template_code=match read_from_file(&template_cpp_path) {
         Ok(code) => code,
         Err(_) => {
             diagnosis.push_err(CompgenError::new(0, 0, STAGE_SEMATIC_CODEGEN, "failed to read sematic_template.cpp"));
             return Err(diagnosis);
         }
     };
+    let header_src=match read_from_file(&header_template_path) {
+        Ok(code) => code,
+        Err(_) => {
+            diagnosis.push_err(CompgenError::new(0, 0, STAGE_SEMATIC_CODEGEN, "failed to read sematic_template.h"));
+            return Err(diagnosis);
+        }
+    };
     let final_code=template_code.replace("{%}", &src);
     if cfg!(feature="debug") {
         // put them in a separate file for users to fill them without getting replaced
-        if write_to_file("sematic_test_user.cpp",&user_fill_template_src).is_err() {
+        if write_to_file(&src_test_user_path,&user_fill_template_src).is_err() {
             diagnosis.push_err(CompgenError::new(0, 0, STAGE_SEMATIC_CODEGEN, "failed to write sematic_test_user.cpp"));
         }
-        if write_to_file("sematic_test.cpp",&final_code).is_err() {
+        if write_to_file(&src_test_path,&final_code).is_err() {
             diagnosis.push_err(CompgenError::new(0, 0, STAGE_SEMATIC_CODEGEN, "failed to write sematic_test.cpp"));
         }
+        if write_to_file(&header_path,&header_src).is_err() {
+            diagnosis.push_err(CompgenError::new(0, 0, STAGE_SEMATIC_CODEGEN, "failed to write sematic.h"));
+        }
     }
-    if diagnosis.is_empty() { Ok(final_code) } else { Err(diagnosis) }
+    let sematic_src=SematicSource{
+        sematic_h: header_src,
+        sematic_cpp: final_code,
+        sematic_user_cpp: user_fill_template_src,
+    };
+    if diagnosis.is_empty() { Ok(sematic_src) } else { Err(diagnosis) }
 }
 #[test]
 fn test_parser_sematic_rules(){
@@ -354,7 +381,8 @@ fn test_parser_sematic_rules(){
 }
 #[test]
 fn test_generate_sematic_source() {
+    let envs=Envs::default();
     let ruleset=parse_parser_rules("parser.rule").unwrap();
     let passes=parse_sematic_rules("sematic.rule", &ruleset).unwrap();
-    let _ = generate_sematic_code(&passes,&ruleset);
+    let _ = generate_sematic_code(&passes,&ruleset,&envs);
 }

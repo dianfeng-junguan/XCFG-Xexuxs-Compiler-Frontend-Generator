@@ -1,6 +1,6 @@
 use std::{cmp, collections::HashMap, fmt::{Display, Pointer, format}, format, fs::File, hash::Hash, io::{Read, Write}, println, vec, write};
 
-use crate::{CompgenError, Diagnosis, STAGE_PARSER_CODEGEN};
+use crate::{CompgenError, Diagnosis, Envs, STAGE_PARSER_CODEGEN, read_from_file, write_to_file};
 
 #[derive(PartialEq, Eq)]
 pub enum TermType{
@@ -467,16 +467,21 @@ pub fn parse_parser_rules(path:&str)->Result<Vec<ParserRuleSet>,Diagnosis>{
 
 #[test]
 fn test_generate_parser_source(){
+    let envs=Envs::default();
     match parse_parser_rules("parser.rule"){
         Ok(parser_rules)=>{
-            generate_parser_source(&parser_rules);
+            generate_parser_source(&parser_rules,&envs);
         }
         Err(d)=>{
             d.print_errs();
         }
     }
 }
-pub fn generate_parser_source(ruleset:&Vec<ParserRuleSet>)->Result<String,Diagnosis>{
+pub struct ParserSource{
+    pub parser_cpp:String,
+    pub parser_h:String
+}
+pub fn generate_parser_source(ruleset:&Vec<ParserRuleSet>,envs:&Envs)->Result<ParserSource,Diagnosis>{
     let mut diagnosis=Diagnosis::new();
     let mut src=String::new();
     for rs in ruleset {
@@ -575,34 +580,25 @@ typedef struct{
     src.push_str(&rule_structdef_str);
     src.push_str(&rule_array_str);
 
-    // generate header file
-    let mut header_file=match File::create("parser.h") {
-        Ok(file) => file,
-        Err(_) => {
-            diagnosis.push_err(CompgenError::new(0, 0, crate::STAGE_PARSER_CODEGEN, "failed to create parser.h"));
-            return Err(diagnosis);
-        }
-    };
-    if header_file.write_all(header_src.as_bytes()).is_err() {
-        diagnosis.push_err(CompgenError::new(0, 0, crate::STAGE_PARSER_CODEGEN, "failed to write parser.h"));
-        return Err(diagnosis);
-    }
+    // prepare paths
+    let header_path=envs.output_dir.join("parser.h");
+    let src_path=envs.output_dir.join("parser.cpp");
+    let template_path=envs.output_dir.join("parser_template.cpp");
+
     // put generated code into template
-    let mut template_reader=match File::open("parser_template.cpp") {
-        Ok(file) => file,
-        Err(_) => {
-            diagnosis.push_err(CompgenError::new(0, 0, crate::STAGE_PARSER_CODEGEN, "failed to read parser template file"));
-            return Err(diagnosis);
-        }
-    };
-    let mut template_code=String::new();
-    if template_reader.read_to_string(&mut template_code).is_err() {
+    let Ok(mut template_code)=read_from_file(template_path.as_path()) else {
         diagnosis.push_err(CompgenError::new(0, 0, crate::STAGE_PARSER_CODEGEN, "failed to read parser template file"));
         return Err(diagnosis);
-    }
+    };
     template_code=template_code.replace("{%}", &src);
     src=template_code;
+
     if cfg!(feature="debug") {
+        // generate header file
+        if write_to_file(header_path.as_path(),&header_src).is_err() {
+            diagnosis.push_err(CompgenError::new(0, 0, crate::STAGE_PARSER_CODEGEN, "failed to write parser.h"));
+            return Err(diagnosis);
+        }
         // println!("{}",src);
         if let Ok(mut parser_output)=File::create("parser_test.cpp") {
             if parser_output.write_all(src.as_bytes()).is_err() {
@@ -612,5 +608,9 @@ typedef struct{
             diagnosis.push_err(CompgenError::new(0, 0, crate::STAGE_PARSER_CODEGEN, "failed to create parser_test.cpp"));
         }
     }
-    if diagnosis.is_empty() { Ok(src) } else { Err(diagnosis) }
+    let parser_src=ParserSource{
+        parser_cpp: src,
+        parser_h: header_src,
+    };
+    if diagnosis.is_empty() { Ok(parser_src) } else { Err(diagnosis) }
 }

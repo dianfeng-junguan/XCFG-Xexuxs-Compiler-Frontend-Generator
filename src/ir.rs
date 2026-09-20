@@ -1,5 +1,7 @@
 #![allow(dead_code)]
 
+use std::path::{Path, PathBuf};
+
 use regex::regex;
 
 use crate::{parser::{NodeMemberType, ParserRuleSet, parse_parser_rules}, read_from_file, write_to_file};
@@ -359,7 +361,7 @@ fn render_ir_instruction(ins:&IRInstruction) -> String {
 
 pub fn parse_ir_rule(path:&str)->Result<Vec<IRRule>,String>{
     let mut rules: Vec<IRRule> = Vec::new();
-    let text=read_from_file(path).map_err(|e| format!("failed to read ir rule file: {}", e))?;
+    let text=read_from_file(Path::new(path)).map_err(|e| format!("failed to read ir rule file: {}", e))?;
     let lines=text.split('\n').collect::<Vec<&str>>();
 
     let pat_node=regex!(r"^([\w_]+)\.([\w_]+):$");
@@ -596,7 +598,7 @@ pub fn parse_ir_rule(path:&str)->Result<Vec<IRRule>,String>{
     Ok(rules)
 }
 pub fn generate_ir_source(rules:&Vec<IRRule>, parser_ruleset:&Vec<ParserRuleSet>)->Result<String,String>{
-    let mut code=read_from_file("ir_template.cpp").expect("failed to read ir_template.cpp");
+    let mut code=read_from_file(Path::new("ir_template.cpp")).expect("failed to read ir_template.cpp");
     let branches={
         let mut b=vec![];
         for rs in parser_ruleset.iter() {
@@ -647,7 +649,7 @@ tempvar_t ir_{}_{}({}_{}_t* node,ir_graph_t* graph,ir_context_t* context){{
     }
     code=code.replace("{funcs}", &funcs);
     if cfg!(feature="debug") {
-        write_to_file("ir_test.cpp", &code).unwrap();
+        write_to_file(Path::new("ir_test.cpp"), &code).unwrap();
     }
     Ok(code)
 }
