@@ -3,28 +3,31 @@
 #include "sematic.h"
 #include <vector>
 bool visit(ast_node_t* node,sematic_context_t* context);
-bool predeclare_function(ast_node_t*,token_t*,arglist_t*,func_returntype_t*,sematic_context_t*);
+bool predeclare_function(ast_node_t*,token_t*,parameter_list_t*,func_returntype_t*,sematic_context_t*);
 bool predeclare_struct(ast_node_t*,token_t*,sematic_context_t*);
-bool enter_function_scope(ast_node_t*,sematic_context_t*);
-bool predeclare_parameters(ast_node_t*,arglist_t*,sematic_context_t*);
+bool create_function_scope(ast_node_t*,sematic_context_t*);
+bool predeclare_parameters(ast_node_t*,parameter_list_t*,sematic_context_t*);
 bool leave_scope(ast_node_t*,sematic_context_t*);
-bool enter_struct_scope(ast_node_t*,sematic_context_t*);
+bool create_struct_scope(ast_node_t*,sematic_context_t*);
 bool predeclare_members(ast_node_t*,structmembers_t*,sematic_context_t*);
-bool enter_block_scope(ast_node_t*,sematic_context_t*);
-bool enter_loop_scope(ast_node_t*,sematic_context_t*);
-bool declare_parameters(ast_node_t*,arglist_t*,sematic_context_t*);
+bool create_block_scope(ast_node_t*,sematic_context_t*);
+bool create_loop_scope(ast_node_t*,sematic_context_t*);
+bool enter_function_scope(ast_node_t*,sematic_context_t*);
+bool declare_parameters(ast_node_t*,parameter_list_t*,sematic_context_t*);
+bool enter_struct_scope(ast_node_t*,sematic_context_t*);
 bool declare_members(ast_node_t*,structmembers_t*,sematic_context_t*);
 bool declare_variable(ast_node_t*,token_t*,composed_type_t*,sematic_context_t*);
 bool declare_inferred_variable(ast_node_t*,token_t*,ultimate_expr_t*,sematic_context_t*);
 bool declare_variable(ast_node_t*,token_t*,sematic_context_t*);
-bool resolve_function_signature(ast_node_t*,token_t*,arglist_t*,func_returntype_t*,sematic_context_t*);
+bool resolve_function_signature(ast_node_t*,token_t*,parameter_list_t*,func_returntype_t*,sematic_context_t*);
 bool resolve_struct_signature(ast_node_t*,token_t*,structmembers_t*,sematic_context_t*);
-bool resolve_symbol(ast_node_t*,token_t*,sematic_context_t*);
+bool resolve_arguments(ast_node_t*,argument_list_t*,sematic_context_t*);
 bool resolve_member(ast_node_t*,lvalue_t*,token_t*,sematic_context_t*);
-bool resolve_arguments(ast_node_t*,arglist_t*,sematic_context_t*);
-bool resolve_member(ast_node_t*,lvalue_noproperty_t*,token_t*,sematic_context_t*);
+bool resolve_symbol(ast_node_t*,token_t*,sematic_context_t*);
+bool enter_block_scope(ast_node_t*,sematic_context_t*);
+bool enter_loop_scope(ast_node_t*,sematic_context_t*);
 bool enter_function_context(ast_node_t*,token_t*,func_returntype_t*,sematic_context_t*);
-bool check_function_type(ast_node_t*,arglist_t*,func_returntype_t*,sematic_context_t*);
+bool check_function_type(ast_node_t*,parameter_list_t*,func_returntype_t*,sematic_context_t*);
 bool leave_function_context(ast_node_t*,sematic_context_t*);
 bool enter_struct_context(ast_node_t*,token_t*,sematic_context_t*);
 bool leave_struct_context(ast_node_t*,sematic_context_t*);
@@ -45,32 +48,35 @@ bool check_bitandable(ast_node_t*,lvalue_t*,assign_expr_t*,sematic_context_t*);
 bool check_bitorable(ast_node_t*,lvalue_t*,assign_expr_t*,sematic_context_t*);
 bool check_shiftleftable(ast_node_t*,lvalue_t*,assign_expr_t*,sematic_context_t*);
 bool check_shiftrightable(ast_node_t*,lvalue_t*,assign_expr_t*,sematic_context_t*);
-bool propagate_type(ast_node_t*,logic_expr_eq_t*,sematic_context_t*);
-bool check_equalable(ast_node_t*,logic_expr_or_t*,logic_expr_eq_t*,sematic_context_t*);
-bool set_boolean_type(ast_node_t*,sematic_context_t*);
-bool check_nequalable(ast_node_t*,logic_expr_or_t*,logic_expr_eq_t*,sematic_context_t*);
-bool check_comparable(ast_node_t*,logic_expr_or_t*,logic_expr_eq_t*,sematic_context_t*);
-bool require_boolean(ast_node_t*,logic_expr_and_t*,sematic_context_t*);
-bool require_boolean(ast_node_t*,logic_expr_or_t*,sematic_context_t*);
-bool require_boolean(ast_node_t*,expr_t*,sematic_context_t*);
-bool propagate_type(ast_node_t*,expr_t*,sematic_context_t*);
-bool propagate_type(ast_node_t*,logic_expr_and_t*,sematic_context_t*);
 bool propagate_type(ast_node_t*,logic_expr_or_t*,sematic_context_t*);
-bool check_addable(ast_node_t*,term_t*,expr_t*,sematic_context_t*);
-bool infer_binary_result_type(ast_node_t*,term_t*,expr_t*,sematic_context_t*);
-bool check_minusable(ast_node_t*,term_t*,expr_t*,sematic_context_t*);
-bool check_mulable(ast_node_t*,power_factor_t*,term_t*,sematic_context_t*);
-bool infer_binary_result_type(ast_node_t*,power_factor_t*,term_t*,sematic_context_t*);
-bool check_divable(ast_node_t*,power_factor_t*,term_t*,sematic_context_t*);
-bool check_modable(ast_node_t*,power_factor_t*,term_t*,sematic_context_t*);
-bool check_bitandable(ast_node_t*,power_factor_t*,term_t*,sematic_context_t*);
-bool check_bitorable(ast_node_t*,power_factor_t*,term_t*,sematic_context_t*);
-bool check_shiftleftable(ast_node_t*,power_factor_t*,term_t*,sematic_context_t*);
-bool check_shiftrightable(ast_node_t*,power_factor_t*,term_t*,sematic_context_t*);
+bool check_equalable(ast_node_t*,logic_expr_eq_t*,bitor_expr_t*,sematic_context_t*);
+bool set_boolean_type(ast_node_t*,sematic_context_t*);
+bool check_nequalable(ast_node_t*,logic_expr_eq_t*,bitor_expr_t*,sematic_context_t*);
+bool check_comparable(ast_node_t*,logic_expr_eq_t*,bitor_expr_t*,sematic_context_t*);
+bool require_boolean(ast_node_t*,logic_expr_or_t*,sematic_context_t*);
+bool require_boolean(ast_node_t*,logic_expr_and_t*,sematic_context_t*);
+bool require_boolean(ast_node_t*,logic_expr_eq_t*,sematic_context_t*);
+bool propagate_type(ast_node_t*,logic_expr_eq_t*,sematic_context_t*);
+bool propagate_type(ast_node_t*,logic_expr_and_t*,sematic_context_t*);
+bool propagate_type(ast_node_t*,bitor_expr_t*,sematic_context_t*);
+bool check_addable(ast_node_t*,expr_t*,term_t*,sematic_context_t*);
+bool infer_binary_result_type(ast_node_t*,expr_t*,term_t*,sematic_context_t*);
+bool check_minusable(ast_node_t*,expr_t*,term_t*,sematic_context_t*);
+bool check_mulable(ast_node_t*,term_t*,power_factor_t*,sematic_context_t*);
+bool infer_binary_result_type(ast_node_t*,term_t*,power_factor_t*,sematic_context_t*);
+bool check_divable(ast_node_t*,term_t*,power_factor_t*,sematic_context_t*);
+bool check_modable(ast_node_t*,term_t*,power_factor_t*,sematic_context_t*);
+bool check_bitandable(ast_node_t*,bitand_expr_t*,shift_expr_t*,sematic_context_t*);
+bool infer_binary_result_type(ast_node_t*,bitand_expr_t*,shift_expr_t*,sematic_context_t*);
+bool check_bitorable(ast_node_t*,bitor_expr_t*,bitand_expr_t*,sematic_context_t*);
+bool infer_binary_result_type(ast_node_t*,bitor_expr_t*,bitand_expr_t*,sematic_context_t*);
+bool check_shiftleftable(ast_node_t*,shift_expr_t*,expr_t*,sematic_context_t*);
+bool infer_binary_result_type(ast_node_t*,shift_expr_t*,expr_t*,sematic_context_t*);
+bool check_shiftrightable(ast_node_t*,shift_expr_t*,expr_t*,sematic_context_t*);
 bool propagate_type(ast_node_t*,power_factor_t*,sematic_context_t*);
-bool require_numeric(ast_node_t*,single_op_factor_t*,sematic_context_t*);
 bool require_numeric(ast_node_t*,power_factor_t*,sematic_context_t*);
-bool infer_binary_result_type(ast_node_t*,single_op_factor_t*,power_factor_t*,sematic_context_t*);
+bool require_numeric(ast_node_t*,single_op_factor_t*,sematic_context_t*);
+bool infer_binary_result_type(ast_node_t*,power_factor_t*,single_op_factor_t*,sematic_context_t*);
 bool propagate_type(ast_node_t*,single_op_factor_t*,sematic_context_t*);
 bool require_lvalue(ast_node_t*,single_op_factor_t*,sematic_context_t*);
 bool infer_pointer_type(ast_node_t*,single_op_factor_t*,sematic_context_t*);
@@ -84,18 +90,19 @@ bool propagate_type(ast_node_t*,ultimate_expr_t*,sematic_context_t*);
 bool propagate_symbol_type(ast_node_t*,token_t*,sematic_context_t*);
 bool propagate_type(ast_node_t*,lvalue_noproperty_t*,sematic_context_t*);
 bool require_callable(ast_node_t*,lvalue_t*,sematic_context_t*);
-bool check_argument_count(ast_node_t*,lvalue_t*,arglist_t*,sematic_context_t*);
-bool check_argument_types(ast_node_t*,lvalue_t*,arglist_t*,sematic_context_t*);
+bool check_argument_count(ast_node_t*,lvalue_t*,argument_list_t*,sematic_context_t*);
+bool check_argument_types(ast_node_t*,lvalue_t*,argument_list_t*,sematic_context_t*);
 bool infer_call_result_type(ast_node_t*,lvalue_t*,sematic_context_t*);
 bool check_member_access(ast_node_t*,lvalue_t*,token_t*,sematic_context_t*);
 bool propagate_member_type(ast_node_t*,lvalue_t*,token_t*,sematic_context_t*);
-bool check_member_access(ast_node_t*,lvalue_noproperty_t*,token_t*,sematic_context_t*);
-bool propagate_member_type(ast_node_t*,lvalue_noproperty_t*,token_t*,sematic_context_t*);
 bool set_number_type(ast_node_t*,token_t*,sematic_context_t*);
 bool set_char_type(ast_node_t*,token_t*,sematic_context_t*);
 bool set_string_type(ast_node_t*,token_t*,sematic_context_t*);
 bool propagate_type(ast_node_t*,factor_t*,sematic_context_t*);
 bool propagate_type(ast_node_t*,term_t*,sematic_context_t*);
+bool propagate_type(ast_node_t*,expr_t*,sematic_context_t*);
+bool propagate_type(ast_node_t*,shift_expr_t*,sematic_context_t*);
+bool propagate_type(ast_node_t*,bitand_expr_t*,sematic_context_t*);
 bool propagate_type(ast_node_t*,glued_factor_t*,sematic_context_t*);
 bool propagate_type(ast_node_t*,assign_expr_t*,sematic_context_t*);
 bool check_valid_type(ast_node_t*,composed_type_t*,sematic_context_t*);
@@ -109,7 +116,7 @@ bool check_empty_return_type(ast_node_t*,sematic_context_t*);
 bool check_match_return_type(ast_node_t*,ultimate_expr_t*,sematic_context_t*);
 bool require_boolean(ast_node_t*,ultimate_expr_t*,sematic_context_t*);
 bool begin_definite_function(ast_node_t*,sematic_context_t*);
-bool mark_parameters_initialized(ast_node_t*,arglist_t*,sematic_context_t*);
+bool mark_parameters_initialized(ast_node_t*,parameter_list_t*,sematic_context_t*);
 bool end_definite_function(ast_node_t*,sematic_context_t*);
 bool mark_initialized(ast_node_t*,token_t*,sematic_context_t*);
 bool mark_uninitialized(ast_node_t*,token_t*,sematic_context_t*);
@@ -140,8 +147,9 @@ bool set_fallthrough_flow(ast_node_t*,sematic_context_t*);
 bool propagate_flow(ast_node_t*,if_t*,sematic_context_t*);
 bool propagate_flow(ast_node_t*,while_t*,sematic_context_t*);
 bool propagate_flow(ast_node_t*,statement_t*,sematic_context_t*);
-bool check_unreachable(ast_node_t*,statement_t*,statements_t*,sematic_context_t*);
-bool combine_sequential_flow(ast_node_t*,statement_t*,statements_t*,sematic_context_t*);
+bool check_unreachable(ast_node_t*,statement_t*,statements_nonempty_t*,sematic_context_t*);
+bool combine_sequential_flow(ast_node_t*,statement_t*,statements_nonempty_t*,sematic_context_t*);
+bool propagate_flow(ast_node_t*,statements_nonempty_t*,sematic_context_t*);
 bool propagate_flow(ast_node_t*,statements_t*,sematic_context_t*);
 bool propagate_flow(ast_node_t*,else_t*,sematic_context_t*);
 bool combine_branch_flow(ast_node_t*,elseif_t*,elseif_else_t*,sematic_context_t*);
@@ -155,7 +163,7 @@ bool check_predeclare_declaration_struct(declaration_struct_t* node, sematic_con
 }
 bool check_predeclare_function_default(function_default_t* node, sematic_context_t* context){
     if(!predeclare_function(node,node->name,node->args,node->return_type,context))return false;
-	if(!enter_function_scope(node,context))return false;
+	if(!create_function_scope(node,context))return false;
 	if(!predeclare_parameters(node,node->args,context))return false;
 	if(!visit(node->stmts,context))return false;
 	if(!leave_scope(node,context))return false;
@@ -163,32 +171,32 @@ bool check_predeclare_function_default(function_default_t* node, sematic_context
 }
 bool check_predeclare_struct_default(struct_default_t* node, sematic_context_t* context){
     if(!predeclare_struct(node,node->name,context))return false;
-	if(!enter_struct_scope(node,context))return false;
+	if(!create_struct_scope(node,context))return false;
 	if(!predeclare_members(node,node->members,context))return false;
 	if(!leave_scope(node,context))return false;
     return true;
 }
 bool check_predeclare_if_default(if_default_t* node, sematic_context_t* context){
-    if(!enter_block_scope(node,context))return false;
+    if(!create_block_scope(node,context))return false;
 	if(!visit(node->statements,context))return false;
 	if(!leave_scope(node,context))return false;
 	if(!visit(node->rest_block,context))return false;
     return true;
 }
 bool check_predeclare_while_default(while_default_t* node, sematic_context_t* context){
-    if(!enter_loop_scope(node,context))return false;
+    if(!create_loop_scope(node,context))return false;
 	if(!visit(node->statements,context))return false;
 	if(!leave_scope(node,context))return false;
     return true;
 }
 bool check_predeclare_else_default(else_default_t* node, sematic_context_t* context){
-    if(!enter_block_scope(node,context))return false;
+    if(!create_block_scope(node,context))return false;
 	if(!visit(node->statements,context))return false;
 	if(!leave_scope(node,context))return false;
     return true;
 }
 bool check_predeclare_elseif_default(elseif_default_t* node, sematic_context_t* context){
-    if(!enter_block_scope(node,context))return false;
+    if(!create_block_scope(node,context))return false;
 	if(!visit(node->statements,context))return false;
 	if(!leave_scope(node,context))return false;
     return true;
@@ -228,10 +236,6 @@ bool predeclare_check(ast_node_t* node,sematic_context_t* context){
         return check_predeclare_elseif_default(static_cast<elseif_default_t*>(node),context);
         break;
 
-    case NODE_FACTOR_ID:
-        
-        return true;
-
     case NODE_FACTOR_NUM:
         
         return true;
@@ -248,17 +252,17 @@ bool predeclare_check(ast_node_t* node,sematic_context_t* context){
         if(!visit(static_cast<glued_factor_paren_t*>(node)->expr,context))return false;
         return true;
 
-    case NODE_GLUED_FACTOR_DEF:
-        if(!visit(static_cast<glued_factor_def_t*>(node)->left,context))return false;
+    case NODE_GLUED_FACTOR_CALL:
+        if(!visit(static_cast<glued_factor_call_t*>(node)->left,context))return false;
+if(!visit(static_cast<glued_factor_call_t*>(node)->args,context))return false;
+        return true;
+
+    case NODE_GLUED_FACTOR_LVALUE:
+        if(!visit(static_cast<glued_factor_lvalue_t*>(node)->value,context))return false;
         return true;
 
     case NODE_GLUED_FACTOR_VALUE:
         if(!visit(static_cast<glued_factor_value_t*>(node)->value,context))return false;
-        return true;
-
-    case NODE_GLUED_FACTOR_CALL:
-        if(!visit(static_cast<glued_factor_call_t*>(node)->left,context))return false;
-if(!visit(static_cast<glued_factor_call_t*>(node)->args,context))return false;
         return true;
 
     case NODE_SINGLE_OP_FACTOR_BITNOT:
@@ -309,28 +313,40 @@ if(!visit(static_cast<term_div_t*>(node)->right,context))return false;
 if(!visit(static_cast<term_mod_t*>(node)->right,context))return false;
         return true;
 
-    case NODE_TERM_BITAND:
-        if(!visit(static_cast<term_bitand_t*>(node)->left,context))return false;
-if(!visit(static_cast<term_bitand_t*>(node)->right,context))return false;
-        return true;
-
-    case NODE_TERM_BITOR:
-        if(!visit(static_cast<term_bitor_t*>(node)->left,context))return false;
-if(!visit(static_cast<term_bitor_t*>(node)->right,context))return false;
-        return true;
-
-    case NODE_TERM_SHIFTLEFT:
-        if(!visit(static_cast<term_shiftleft_t*>(node)->left,context))return false;
-if(!visit(static_cast<term_shiftleft_t*>(node)->right,context))return false;
-        return true;
-
-    case NODE_TERM_SHIFTRIGHT:
-        if(!visit(static_cast<term_shiftright_t*>(node)->left,context))return false;
-if(!visit(static_cast<term_shiftright_t*>(node)->right,context))return false;
-        return true;
-
     case NODE_TERM_FACTOR:
         if(!visit(static_cast<term_factor_t*>(node)->expr,context))return false;
+        return true;
+
+    case NODE_SHIFT_EXPR_SHIFTLEFT:
+        if(!visit(static_cast<shift_expr_shiftleft_t*>(node)->left,context))return false;
+if(!visit(static_cast<shift_expr_shiftleft_t*>(node)->right,context))return false;
+        return true;
+
+    case NODE_SHIFT_EXPR_SHIFTRIGHT:
+        if(!visit(static_cast<shift_expr_shiftright_t*>(node)->left,context))return false;
+if(!visit(static_cast<shift_expr_shiftright_t*>(node)->right,context))return false;
+        return true;
+
+    case NODE_SHIFT_EXPR_EXPR:
+        if(!visit(static_cast<shift_expr_expr_t*>(node)->expr,context))return false;
+        return true;
+
+    case NODE_BITAND_EXPR_BITAND:
+        if(!visit(static_cast<bitand_expr_bitand_t*>(node)->left,context))return false;
+if(!visit(static_cast<bitand_expr_bitand_t*>(node)->right,context))return false;
+        return true;
+
+    case NODE_BITAND_EXPR_SHIFT:
+        if(!visit(static_cast<bitand_expr_shift_t*>(node)->expr,context))return false;
+        return true;
+
+    case NODE_BITOR_EXPR_BITOR:
+        if(!visit(static_cast<bitor_expr_bitor_t*>(node)->left,context))return false;
+if(!visit(static_cast<bitor_expr_bitor_t*>(node)->right,context))return false;
+        return true;
+
+    case NODE_BITOR_EXPR_BITAND:
+        if(!visit(static_cast<bitor_expr_bitand_t*>(node)->expr,context))return false;
         return true;
 
     case NODE_EXPR_ADD:
@@ -489,13 +505,13 @@ if(!visit(static_cast<assign_expr_shiftright_assign_t*>(node)->right,context))re
         if(!visit(static_cast<composed_type_ptr_t*>(node)->pointer_type,context))return false;
         return true;
 
-    case NODE_COMPOSED_TYPE_NSIZEDARR:
-        if(!visit(static_cast<composed_type_nsizedarr_t*>(node)->element_type,context))return false;
-        return true;
-
     case NODE_COMPOSED_TYPE_SIZEDARR:
         if(!visit(static_cast<composed_type_sizedarr_t*>(node)->element_type,context))return false;
 if(!visit(static_cast<composed_type_sizedarr_t*>(node)->array_size,context))return false;
+        return true;
+
+    case NODE_COMPOSED_TYPE_NSIZEDARR:
+        if(!visit(static_cast<composed_type_nsizedarr_t*>(node)->element_type,context))return false;
         return true;
 
     case NODE_DEFINITION_DEFTYPE:
@@ -520,13 +536,13 @@ if(!visit(static_cast<elseif_else_chain_t*>(node)->rest_block,context))return fa
         
         return true;
 
-    case NODE_STRUCTMEMBERS_SINGMEM:
-        if(!visit(static_cast<structmembers_singmem_t*>(node)->def_type,context))return false;
-        return true;
-
     case NODE_STRUCTMEMBERS_MULTIMEM:
         if(!visit(static_cast<structmembers_multimem_t*>(node)->def_type,context))return false;
 if(!visit(static_cast<structmembers_multimem_t*>(node)->other_members,context))return false;
+        return true;
+
+    case NODE_STRUCTMEMBERS_SINGMEM:
+        if(!visit(static_cast<structmembers_singmem_t*>(node)->def_type,context))return false;
         return true;
 
     case NODE_STRUCTMEMBERS_EMPTY:
@@ -569,21 +585,25 @@ if(!visit(static_cast<structmembers_multimem_t*>(node)->other_members,context))r
         
         return true;
 
-    case NODE_STATEMENT_RETURN_EMPTY:
-        
-        return true;
-
     case NODE_STATEMENT_RETURN_STH:
         if(!visit(static_cast<statement_return_sth_t*>(node)->value,context))return false;
         return true;
 
-    case NODE_STATEMENTS_STMT:
-        if(!visit(static_cast<statements_stmt_t*>(node)->stmt,context))return false;
+    case NODE_STATEMENT_RETURN_EMPTY:
+        
         return true;
 
-    case NODE_STATEMENTS_MULTISTMT:
-        if(!visit(static_cast<statements_multistmt_t*>(node)->stmt,context))return false;
-if(!visit(static_cast<statements_multistmt_t*>(node)->other_stmts,context))return false;
+    case NODE_STATEMENTS_NONEMPTY_MULTISTMT:
+        if(!visit(static_cast<statements_nonempty_multistmt_t*>(node)->stmt,context))return false;
+if(!visit(static_cast<statements_nonempty_multistmt_t*>(node)->other_stmts,context))return false;
+        return true;
+
+    case NODE_STATEMENTS_NONEMPTY_STMT:
+        if(!visit(static_cast<statements_nonempty_stmt_t*>(node)->stmt,context))return false;
+        return true;
+
+    case NODE_STATEMENTS_HASSTATEMENTS:
+        if(!visit(static_cast<statements_hasstatements_t*>(node)->statements,context))return false;
         return true;
 
     case NODE_STATEMENTS_EMPTY:
@@ -598,20 +618,37 @@ if(!visit(static_cast<statements_multistmt_t*>(node)->other_stmts,context))retur
         
         return true;
 
-    case NODE_ARGLIST_NONEMPTY_SINGARG:
-        if(!visit(static_cast<arglist_nonempty_singarg_t*>(node)->arg_type,context))return false;
+    case NODE_PARAMETER_LIST_NONEMPTY_MULTIARG:
+        if(!visit(static_cast<parameter_list_nonempty_multiarg_t*>(node)->arg_type,context))return false;
+if(!visit(static_cast<parameter_list_nonempty_multiarg_t*>(node)->other_args,context))return false;
         return true;
 
-    case NODE_ARGLIST_NONEMPTY_MULTIARG:
-        if(!visit(static_cast<arglist_nonempty_multiarg_t*>(node)->arg_type,context))return false;
-if(!visit(static_cast<arglist_nonempty_multiarg_t*>(node)->other_args,context))return false;
+    case NODE_PARAMETER_LIST_NONEMPTY_SINGARG:
+        if(!visit(static_cast<parameter_list_nonempty_singarg_t*>(node)->arg_type,context))return false;
         return true;
 
-    case NODE_ARGLIST_HASARG:
-        if(!visit(static_cast<arglist_hasarg_t*>(node)->args,context))return false;
+    case NODE_PARAMETER_LIST_HASARG:
+        if(!visit(static_cast<parameter_list_hasarg_t*>(node)->args,context))return false;
         return true;
 
-    case NODE_ARGLIST_EMPTY:
+    case NODE_PARAMETER_LIST_EMPTY:
+        
+        return true;
+
+    case NODE_ARGUMENT_LIST_NONEMPTY_MULTIARG:
+        if(!visit(static_cast<argument_list_nonempty_multiarg_t*>(node)->value,context))return false;
+if(!visit(static_cast<argument_list_nonempty_multiarg_t*>(node)->other_args,context))return false;
+        return true;
+
+    case NODE_ARGUMENT_LIST_NONEMPTY_SINGARG:
+        if(!visit(static_cast<argument_list_nonempty_singarg_t*>(node)->value,context))return false;
+        return true;
+
+    case NODE_ARGUMENT_LIST_HASARG:
+        if(!visit(static_cast<argument_list_hasarg_t*>(node)->args,context))return false;
+        return true;
+
+    case NODE_ARGUMENT_LIST_EMPTY:
         
         return true;
 
@@ -679,13 +716,8 @@ bool check_resolve_declaration_struct(declaration_struct_t* node, sematic_contex
 	if(!resolve_struct_signature(node,node->name,node->members,context))return false;
     return true;
 }
-bool check_resolve_factor_id(factor_id_t* node, sematic_context_t* context){
-    if(!resolve_symbol(node,node->value,context))return false;
-    return true;
-}
-bool check_resolve_glued_factor_def(glued_factor_def_t* node, sematic_context_t* context){
-    if(!visit(node->left,context))return false;
-	if(!resolve_member(node,node->left,node->right,context))return false;
+bool check_resolve_glued_factor_lvalue(glued_factor_lvalue_t* node, sematic_context_t* context){
+    if(!visit(node->value,context))return false;
     return true;
 }
 bool check_resolve_glued_factor_call(glued_factor_call_t* node, sematic_context_t* context){
@@ -790,12 +822,8 @@ bool resolve_check(ast_node_t* node,sematic_context_t* context){
         return check_resolve_declaration_struct(static_cast<declaration_struct_t*>(node),context);
         break;
 
-    case NODE_FACTOR_ID:
-        return check_resolve_factor_id(static_cast<factor_id_t*>(node),context);
-        break;
-
-    case NODE_GLUED_FACTOR_DEF:
-        return check_resolve_glued_factor_def(static_cast<glued_factor_def_t*>(node),context);
+    case NODE_GLUED_FACTOR_LVALUE:
+        return check_resolve_glued_factor_lvalue(static_cast<glued_factor_lvalue_t*>(node),context);
         break;
 
     case NODE_GLUED_FACTOR_CALL:
@@ -918,28 +946,40 @@ if(!visit(static_cast<term_div_t*>(node)->right,context))return false;
 if(!visit(static_cast<term_mod_t*>(node)->right,context))return false;
         return true;
 
-    case NODE_TERM_BITAND:
-        if(!visit(static_cast<term_bitand_t*>(node)->left,context))return false;
-if(!visit(static_cast<term_bitand_t*>(node)->right,context))return false;
-        return true;
-
-    case NODE_TERM_BITOR:
-        if(!visit(static_cast<term_bitor_t*>(node)->left,context))return false;
-if(!visit(static_cast<term_bitor_t*>(node)->right,context))return false;
-        return true;
-
-    case NODE_TERM_SHIFTLEFT:
-        if(!visit(static_cast<term_shiftleft_t*>(node)->left,context))return false;
-if(!visit(static_cast<term_shiftleft_t*>(node)->right,context))return false;
-        return true;
-
-    case NODE_TERM_SHIFTRIGHT:
-        if(!visit(static_cast<term_shiftright_t*>(node)->left,context))return false;
-if(!visit(static_cast<term_shiftright_t*>(node)->right,context))return false;
-        return true;
-
     case NODE_TERM_FACTOR:
         if(!visit(static_cast<term_factor_t*>(node)->expr,context))return false;
+        return true;
+
+    case NODE_SHIFT_EXPR_SHIFTLEFT:
+        if(!visit(static_cast<shift_expr_shiftleft_t*>(node)->left,context))return false;
+if(!visit(static_cast<shift_expr_shiftleft_t*>(node)->right,context))return false;
+        return true;
+
+    case NODE_SHIFT_EXPR_SHIFTRIGHT:
+        if(!visit(static_cast<shift_expr_shiftright_t*>(node)->left,context))return false;
+if(!visit(static_cast<shift_expr_shiftright_t*>(node)->right,context))return false;
+        return true;
+
+    case NODE_SHIFT_EXPR_EXPR:
+        if(!visit(static_cast<shift_expr_expr_t*>(node)->expr,context))return false;
+        return true;
+
+    case NODE_BITAND_EXPR_BITAND:
+        if(!visit(static_cast<bitand_expr_bitand_t*>(node)->left,context))return false;
+if(!visit(static_cast<bitand_expr_bitand_t*>(node)->right,context))return false;
+        return true;
+
+    case NODE_BITAND_EXPR_SHIFT:
+        if(!visit(static_cast<bitand_expr_shift_t*>(node)->expr,context))return false;
+        return true;
+
+    case NODE_BITOR_EXPR_BITOR:
+        if(!visit(static_cast<bitor_expr_bitor_t*>(node)->left,context))return false;
+if(!visit(static_cast<bitor_expr_bitor_t*>(node)->right,context))return false;
+        return true;
+
+    case NODE_BITOR_EXPR_BITAND:
+        if(!visit(static_cast<bitor_expr_bitand_t*>(node)->expr,context))return false;
         return true;
 
     case NODE_EXPR_ADD:
@@ -1090,13 +1130,13 @@ if(!visit(static_cast<assign_expr_shiftright_assign_t*>(node)->right,context))re
         if(!visit(static_cast<composed_type_ptr_t*>(node)->pointer_type,context))return false;
         return true;
 
-    case NODE_COMPOSED_TYPE_NSIZEDARR:
-        if(!visit(static_cast<composed_type_nsizedarr_t*>(node)->element_type,context))return false;
-        return true;
-
     case NODE_COMPOSED_TYPE_SIZEDARR:
         if(!visit(static_cast<composed_type_sizedarr_t*>(node)->element_type,context))return false;
 if(!visit(static_cast<composed_type_sizedarr_t*>(node)->array_size,context))return false;
+        return true;
+
+    case NODE_COMPOSED_TYPE_NSIZEDARR:
+        if(!visit(static_cast<composed_type_nsizedarr_t*>(node)->element_type,context))return false;
         return true;
 
     case NODE_ELSEIF_ELSE_ONLYELSE:
@@ -1112,13 +1152,13 @@ if(!visit(static_cast<elseif_else_chain_t*>(node)->rest_block,context))return fa
         
         return true;
 
-    case NODE_STRUCTMEMBERS_SINGMEM:
-        if(!visit(static_cast<structmembers_singmem_t*>(node)->def_type,context))return false;
-        return true;
-
     case NODE_STRUCTMEMBERS_MULTIMEM:
         if(!visit(static_cast<structmembers_multimem_t*>(node)->def_type,context))return false;
 if(!visit(static_cast<structmembers_multimem_t*>(node)->other_members,context))return false;
+        return true;
+
+    case NODE_STRUCTMEMBERS_SINGMEM:
+        if(!visit(static_cast<structmembers_singmem_t*>(node)->def_type,context))return false;
         return true;
 
     case NODE_STRUCTMEMBERS_EMPTY:
@@ -1137,13 +1177,17 @@ if(!visit(static_cast<structmembers_multimem_t*>(node)->other_members,context))r
         
         return true;
 
-    case NODE_STATEMENTS_STMT:
-        if(!visit(static_cast<statements_stmt_t*>(node)->stmt,context))return false;
+    case NODE_STATEMENTS_NONEMPTY_MULTISTMT:
+        if(!visit(static_cast<statements_nonempty_multistmt_t*>(node)->stmt,context))return false;
+if(!visit(static_cast<statements_nonempty_multistmt_t*>(node)->other_stmts,context))return false;
         return true;
 
-    case NODE_STATEMENTS_MULTISTMT:
-        if(!visit(static_cast<statements_multistmt_t*>(node)->stmt,context))return false;
-if(!visit(static_cast<statements_multistmt_t*>(node)->other_stmts,context))return false;
+    case NODE_STATEMENTS_NONEMPTY_STMT:
+        if(!visit(static_cast<statements_nonempty_stmt_t*>(node)->stmt,context))return false;
+        return true;
+
+    case NODE_STATEMENTS_HASSTATEMENTS:
+        if(!visit(static_cast<statements_hasstatements_t*>(node)->statements,context))return false;
         return true;
 
     case NODE_STATEMENTS_EMPTY:
@@ -1158,20 +1202,37 @@ if(!visit(static_cast<statements_multistmt_t*>(node)->other_stmts,context))retur
         
         return true;
 
-    case NODE_ARGLIST_NONEMPTY_SINGARG:
-        if(!visit(static_cast<arglist_nonempty_singarg_t*>(node)->arg_type,context))return false;
+    case NODE_PARAMETER_LIST_NONEMPTY_MULTIARG:
+        if(!visit(static_cast<parameter_list_nonempty_multiarg_t*>(node)->arg_type,context))return false;
+if(!visit(static_cast<parameter_list_nonempty_multiarg_t*>(node)->other_args,context))return false;
         return true;
 
-    case NODE_ARGLIST_NONEMPTY_MULTIARG:
-        if(!visit(static_cast<arglist_nonempty_multiarg_t*>(node)->arg_type,context))return false;
-if(!visit(static_cast<arglist_nonempty_multiarg_t*>(node)->other_args,context))return false;
+    case NODE_PARAMETER_LIST_NONEMPTY_SINGARG:
+        if(!visit(static_cast<parameter_list_nonempty_singarg_t*>(node)->arg_type,context))return false;
         return true;
 
-    case NODE_ARGLIST_HASARG:
-        if(!visit(static_cast<arglist_hasarg_t*>(node)->args,context))return false;
+    case NODE_PARAMETER_LIST_HASARG:
+        if(!visit(static_cast<parameter_list_hasarg_t*>(node)->args,context))return false;
         return true;
 
-    case NODE_ARGLIST_EMPTY:
+    case NODE_PARAMETER_LIST_EMPTY:
+        
+        return true;
+
+    case NODE_ARGUMENT_LIST_NONEMPTY_MULTIARG:
+        if(!visit(static_cast<argument_list_nonempty_multiarg_t*>(node)->value,context))return false;
+if(!visit(static_cast<argument_list_nonempty_multiarg_t*>(node)->other_args,context))return false;
+        return true;
+
+    case NODE_ARGUMENT_LIST_NONEMPTY_SINGARG:
+        if(!visit(static_cast<argument_list_nonempty_singarg_t*>(node)->value,context))return false;
+        return true;
+
+    case NODE_ARGUMENT_LIST_HASARG:
+        if(!visit(static_cast<argument_list_hasarg_t*>(node)->args,context))return false;
+        return true;
+
+    case NODE_ARGUMENT_LIST_EMPTY:
         
         return true;
 
@@ -1235,12 +1296,12 @@ bool check_typecheck_declaration_struct(declaration_struct_t* node, sematic_cont
     if(!visit(node->members,context))return false;
     return true;
 }
-bool check_typecheck_arglist_nonempty_singarg(arglist_nonempty_singarg_t* node, sematic_context_t* context){
+bool check_typecheck_parameter_list_nonempty_singarg(parameter_list_nonempty_singarg_t* node, sematic_context_t* context){
     if(!visit(node->arg_type,context))return false;
 	if(!require_valid_parameter_type(node,node->arg_type,context))return false;
     return true;
 }
-bool check_typecheck_arglist_nonempty_multiarg(arglist_nonempty_multiarg_t* node, sematic_context_t* context){
+bool check_typecheck_parameter_list_nonempty_multiarg(parameter_list_nonempty_multiarg_t* node, sematic_context_t* context){
     if(!visit(node->arg_type,context))return false;
 	if(!require_valid_parameter_type(node,node->arg_type,context))return false;
 	if(!visit(node->other_args,context))return false;
@@ -1450,28 +1511,28 @@ bool check_typecheck_term_mod(term_mod_t* node, sematic_context_t* context){
 	if(!infer_binary_result_type(node,node->left,node->right,context))return false;
     return true;
 }
-bool check_typecheck_term_bitand(term_bitand_t* node, sematic_context_t* context){
+bool check_typecheck_bitand_expr_bitand(bitand_expr_bitand_t* node, sematic_context_t* context){
     if(!visit(node->left,context))return false;
 	if(!visit(node->right,context))return false;
 	if(!check_bitandable(node,node->left,node->right,context))return false;
 	if(!infer_binary_result_type(node,node->left,node->right,context))return false;
     return true;
 }
-bool check_typecheck_term_bitor(term_bitor_t* node, sematic_context_t* context){
+bool check_typecheck_bitor_expr_bitor(bitor_expr_bitor_t* node, sematic_context_t* context){
     if(!visit(node->left,context))return false;
 	if(!visit(node->right,context))return false;
 	if(!check_bitorable(node,node->left,node->right,context))return false;
 	if(!infer_binary_result_type(node,node->left,node->right,context))return false;
     return true;
 }
-bool check_typecheck_term_shiftleft(term_shiftleft_t* node, sematic_context_t* context){
+bool check_typecheck_shift_expr_shiftleft(shift_expr_shiftleft_t* node, sematic_context_t* context){
     if(!visit(node->left,context))return false;
 	if(!visit(node->right,context))return false;
 	if(!check_shiftleftable(node,node->left,node->right,context))return false;
 	if(!infer_binary_result_type(node,node->left,node->right,context))return false;
     return true;
 }
-bool check_typecheck_term_shiftright(term_shiftright_t* node, sematic_context_t* context){
+bool check_typecheck_shift_expr_shiftright(shift_expr_shiftright_t* node, sematic_context_t* context){
     if(!visit(node->left,context))return false;
 	if(!visit(node->right,context))return false;
 	if(!check_shiftrightable(node,node->left,node->right,context))return false;
@@ -1551,20 +1612,15 @@ bool check_typecheck_glued_factor_call(glued_factor_call_t* node, sematic_contex
 	if(!infer_call_result_type(node,node->left,context))return false;
     return true;
 }
-bool check_typecheck_glued_factor_def(glued_factor_def_t* node, sematic_context_t* context){
-    if(!visit(node->left,context))return false;
-	if(!check_member_access(node,node->left,node->right,context))return false;
-	if(!propagate_member_type(node,node->left,node->right,context))return false;
+bool check_typecheck_glued_factor_lvalue(glued_factor_lvalue_t* node, sematic_context_t* context){
+    if(!visit(node->value,context))return false;
+	if(!propagate_type(node,node->value,context))return false;
     return true;
 }
 bool check_typecheck_lvalue_prop(lvalue_prop_t* node, sematic_context_t* context){
     if(!visit(node->left,context))return false;
 	if(!check_member_access(node,node->left,node->right,context))return false;
 	if(!propagate_member_type(node,node->left,node->right,context))return false;
-    return true;
-}
-bool check_typecheck_factor_id(factor_id_t* node, sematic_context_t* context){
-    if(!propagate_symbol_type(node,node->value,context))return false;
     return true;
 }
 bool check_typecheck_factor_num(factor_num_t* node, sematic_context_t* context){
@@ -1590,6 +1646,21 @@ bool check_typecheck_glued_factor_paren(glued_factor_paren_t* node, sematic_cont
     return true;
 }
 bool check_typecheck_expr_term(expr_term_t* node, sematic_context_t* context){
+    if(!visit(node->expr,context))return false;
+	if(!propagate_type(node,node->expr,context))return false;
+    return true;
+}
+bool check_typecheck_shift_expr_expr(shift_expr_expr_t* node, sematic_context_t* context){
+    if(!visit(node->expr,context))return false;
+	if(!propagate_type(node,node->expr,context))return false;
+    return true;
+}
+bool check_typecheck_bitand_expr_shift(bitand_expr_shift_t* node, sematic_context_t* context){
+    if(!visit(node->expr,context))return false;
+	if(!propagate_type(node,node->expr,context))return false;
+    return true;
+}
+bool check_typecheck_bitor_expr_bitand(bitor_expr_bitand_t* node, sematic_context_t* context){
     if(!visit(node->expr,context))return false;
 	if(!propagate_type(node,node->expr,context))return false;
     return true;
@@ -1699,12 +1770,12 @@ bool typecheck_check(ast_node_t* node,sematic_context_t* context){
         return check_typecheck_declaration_struct(static_cast<declaration_struct_t*>(node),context);
         break;
 
-    case NODE_ARGLIST_NONEMPTY_SINGARG:
-        return check_typecheck_arglist_nonempty_singarg(static_cast<arglist_nonempty_singarg_t*>(node),context);
+    case NODE_PARAMETER_LIST_NONEMPTY_SINGARG:
+        return check_typecheck_parameter_list_nonempty_singarg(static_cast<parameter_list_nonempty_singarg_t*>(node),context);
         break;
 
-    case NODE_ARGLIST_NONEMPTY_MULTIARG:
-        return check_typecheck_arglist_nonempty_multiarg(static_cast<arglist_nonempty_multiarg_t*>(node),context);
+    case NODE_PARAMETER_LIST_NONEMPTY_MULTIARG:
+        return check_typecheck_parameter_list_nonempty_multiarg(static_cast<parameter_list_nonempty_multiarg_t*>(node),context);
         break;
 
     case NODE_STRUCTMEMBERS_SINGMEM:
@@ -1823,20 +1894,20 @@ bool typecheck_check(ast_node_t* node,sematic_context_t* context){
         return check_typecheck_term_mod(static_cast<term_mod_t*>(node),context);
         break;
 
-    case NODE_TERM_BITAND:
-        return check_typecheck_term_bitand(static_cast<term_bitand_t*>(node),context);
+    case NODE_BITAND_EXPR_BITAND:
+        return check_typecheck_bitand_expr_bitand(static_cast<bitand_expr_bitand_t*>(node),context);
         break;
 
-    case NODE_TERM_BITOR:
-        return check_typecheck_term_bitor(static_cast<term_bitor_t*>(node),context);
+    case NODE_BITOR_EXPR_BITOR:
+        return check_typecheck_bitor_expr_bitor(static_cast<bitor_expr_bitor_t*>(node),context);
         break;
 
-    case NODE_TERM_SHIFTLEFT:
-        return check_typecheck_term_shiftleft(static_cast<term_shiftleft_t*>(node),context);
+    case NODE_SHIFT_EXPR_SHIFTLEFT:
+        return check_typecheck_shift_expr_shiftleft(static_cast<shift_expr_shiftleft_t*>(node),context);
         break;
 
-    case NODE_TERM_SHIFTRIGHT:
-        return check_typecheck_term_shiftright(static_cast<term_shiftright_t*>(node),context);
+    case NODE_SHIFT_EXPR_SHIFTRIGHT:
+        return check_typecheck_shift_expr_shiftright(static_cast<shift_expr_shiftright_t*>(node),context);
         break;
 
     case NODE_TERM_FACTOR:
@@ -1887,16 +1958,12 @@ bool typecheck_check(ast_node_t* node,sematic_context_t* context){
         return check_typecheck_glued_factor_call(static_cast<glued_factor_call_t*>(node),context);
         break;
 
-    case NODE_GLUED_FACTOR_DEF:
-        return check_typecheck_glued_factor_def(static_cast<glued_factor_def_t*>(node),context);
+    case NODE_GLUED_FACTOR_LVALUE:
+        return check_typecheck_glued_factor_lvalue(static_cast<glued_factor_lvalue_t*>(node),context);
         break;
 
     case NODE_LVALUE_PROP:
         return check_typecheck_lvalue_prop(static_cast<lvalue_prop_t*>(node),context);
-        break;
-
-    case NODE_FACTOR_ID:
-        return check_typecheck_factor_id(static_cast<factor_id_t*>(node),context);
         break;
 
     case NODE_FACTOR_NUM:
@@ -1921,6 +1988,18 @@ bool typecheck_check(ast_node_t* node,sematic_context_t* context){
 
     case NODE_EXPR_TERM:
         return check_typecheck_expr_term(static_cast<expr_term_t*>(node),context);
+        break;
+
+    case NODE_SHIFT_EXPR_EXPR:
+        return check_typecheck_shift_expr_expr(static_cast<shift_expr_expr_t*>(node),context);
+        break;
+
+    case NODE_BITAND_EXPR_SHIFT:
+        return check_typecheck_bitand_expr_shift(static_cast<bitand_expr_shift_t*>(node),context);
+        break;
+
+    case NODE_BITOR_EXPR_BITAND:
+        return check_typecheck_bitor_expr_bitand(static_cast<bitor_expr_bitand_t*>(node),context);
         break;
 
     case NODE_POWER_FACTOR_NONE:
@@ -2028,13 +2107,17 @@ if(!visit(static_cast<elseif_else_chain_t*>(node)->rest_block,context))return fa
         
         return true;
 
-    case NODE_STATEMENTS_STMT:
-        if(!visit(static_cast<statements_stmt_t*>(node)->stmt,context))return false;
+    case NODE_STATEMENTS_NONEMPTY_MULTISTMT:
+        if(!visit(static_cast<statements_nonempty_multistmt_t*>(node)->stmt,context))return false;
+if(!visit(static_cast<statements_nonempty_multistmt_t*>(node)->other_stmts,context))return false;
         return true;
 
-    case NODE_STATEMENTS_MULTISTMT:
-        if(!visit(static_cast<statements_multistmt_t*>(node)->stmt,context))return false;
-if(!visit(static_cast<statements_multistmt_t*>(node)->other_stmts,context))return false;
+    case NODE_STATEMENTS_NONEMPTY_STMT:
+        if(!visit(static_cast<statements_nonempty_stmt_t*>(node)->stmt,context))return false;
+        return true;
+
+    case NODE_STATEMENTS_HASSTATEMENTS:
+        if(!visit(static_cast<statements_hasstatements_t*>(node)->statements,context))return false;
         return true;
 
     case NODE_STATEMENTS_EMPTY:
@@ -2049,11 +2132,28 @@ if(!visit(static_cast<statements_multistmt_t*>(node)->other_stmts,context))retur
         
         return true;
 
-    case NODE_ARGLIST_HASARG:
-        if(!visit(static_cast<arglist_hasarg_t*>(node)->args,context))return false;
+    case NODE_PARAMETER_LIST_HASARG:
+        if(!visit(static_cast<parameter_list_hasarg_t*>(node)->args,context))return false;
         return true;
 
-    case NODE_ARGLIST_EMPTY:
+    case NODE_PARAMETER_LIST_EMPTY:
+        
+        return true;
+
+    case NODE_ARGUMENT_LIST_NONEMPTY_MULTIARG:
+        if(!visit(static_cast<argument_list_nonempty_multiarg_t*>(node)->value,context))return false;
+if(!visit(static_cast<argument_list_nonempty_multiarg_t*>(node)->other_args,context))return false;
+        return true;
+
+    case NODE_ARGUMENT_LIST_NONEMPTY_SINGARG:
+        if(!visit(static_cast<argument_list_nonempty_singarg_t*>(node)->value,context))return false;
+        return true;
+
+    case NODE_ARGUMENT_LIST_HASARG:
+        if(!visit(static_cast<argument_list_hasarg_t*>(node)->args,context))return false;
+        return true;
+
+    case NODE_ARGUMENT_LIST_EMPTY:
         
         return true;
 
@@ -2189,10 +2289,6 @@ bool check_definite_init_lvalue_noproperty_deref(lvalue_noproperty_deref_t* node
 	if(!pop_access_mode(node,context))return false;
     return true;
 }
-bool check_definite_init_factor_id(factor_id_t* node, sematic_context_t* context){
-    if(!require_initialized_if_read(node,node->value,context))return false;
-    return true;
-}
 bool check_definite_init_lvalue_noproperty_id(lvalue_noproperty_id_t* node, sematic_context_t* context){
     if(!require_initialized_if_read(node,node->id,context))return false;
     return true;
@@ -2326,10 +2422,6 @@ bool definite_init_check(ast_node_t* node,sematic_context_t* context){
         return check_definite_init_lvalue_noproperty_deref(static_cast<lvalue_noproperty_deref_t*>(node),context);
         break;
 
-    case NODE_FACTOR_ID:
-        return check_definite_init_factor_id(static_cast<factor_id_t*>(node),context);
-        break;
-
     case NODE_LVALUE_NOPROPERTY_ID:
         return check_definite_init_lvalue_noproperty_id(static_cast<lvalue_noproperty_id_t*>(node),context);
         break;
@@ -2382,17 +2474,17 @@ bool definite_init_check(ast_node_t* node,sematic_context_t* context){
         if(!visit(static_cast<glued_factor_paren_t*>(node)->expr,context))return false;
         return true;
 
-    case NODE_GLUED_FACTOR_DEF:
-        if(!visit(static_cast<glued_factor_def_t*>(node)->left,context))return false;
+    case NODE_GLUED_FACTOR_CALL:
+        if(!visit(static_cast<glued_factor_call_t*>(node)->left,context))return false;
+if(!visit(static_cast<glued_factor_call_t*>(node)->args,context))return false;
+        return true;
+
+    case NODE_GLUED_FACTOR_LVALUE:
+        if(!visit(static_cast<glued_factor_lvalue_t*>(node)->value,context))return false;
         return true;
 
     case NODE_GLUED_FACTOR_VALUE:
         if(!visit(static_cast<glued_factor_value_t*>(node)->value,context))return false;
-        return true;
-
-    case NODE_GLUED_FACTOR_CALL:
-        if(!visit(static_cast<glued_factor_call_t*>(node)->left,context))return false;
-if(!visit(static_cast<glued_factor_call_t*>(node)->args,context))return false;
         return true;
 
     case NODE_SINGLE_OP_FACTOR_BITNOT:
@@ -2435,28 +2527,40 @@ if(!visit(static_cast<term_div_t*>(node)->right,context))return false;
 if(!visit(static_cast<term_mod_t*>(node)->right,context))return false;
         return true;
 
-    case NODE_TERM_BITAND:
-        if(!visit(static_cast<term_bitand_t*>(node)->left,context))return false;
-if(!visit(static_cast<term_bitand_t*>(node)->right,context))return false;
-        return true;
-
-    case NODE_TERM_BITOR:
-        if(!visit(static_cast<term_bitor_t*>(node)->left,context))return false;
-if(!visit(static_cast<term_bitor_t*>(node)->right,context))return false;
-        return true;
-
-    case NODE_TERM_SHIFTLEFT:
-        if(!visit(static_cast<term_shiftleft_t*>(node)->left,context))return false;
-if(!visit(static_cast<term_shiftleft_t*>(node)->right,context))return false;
-        return true;
-
-    case NODE_TERM_SHIFTRIGHT:
-        if(!visit(static_cast<term_shiftright_t*>(node)->left,context))return false;
-if(!visit(static_cast<term_shiftright_t*>(node)->right,context))return false;
-        return true;
-
     case NODE_TERM_FACTOR:
         if(!visit(static_cast<term_factor_t*>(node)->expr,context))return false;
+        return true;
+
+    case NODE_SHIFT_EXPR_SHIFTLEFT:
+        if(!visit(static_cast<shift_expr_shiftleft_t*>(node)->left,context))return false;
+if(!visit(static_cast<shift_expr_shiftleft_t*>(node)->right,context))return false;
+        return true;
+
+    case NODE_SHIFT_EXPR_SHIFTRIGHT:
+        if(!visit(static_cast<shift_expr_shiftright_t*>(node)->left,context))return false;
+if(!visit(static_cast<shift_expr_shiftright_t*>(node)->right,context))return false;
+        return true;
+
+    case NODE_SHIFT_EXPR_EXPR:
+        if(!visit(static_cast<shift_expr_expr_t*>(node)->expr,context))return false;
+        return true;
+
+    case NODE_BITAND_EXPR_BITAND:
+        if(!visit(static_cast<bitand_expr_bitand_t*>(node)->left,context))return false;
+if(!visit(static_cast<bitand_expr_bitand_t*>(node)->right,context))return false;
+        return true;
+
+    case NODE_BITAND_EXPR_SHIFT:
+        if(!visit(static_cast<bitand_expr_shift_t*>(node)->expr,context))return false;
+        return true;
+
+    case NODE_BITOR_EXPR_BITOR:
+        if(!visit(static_cast<bitor_expr_bitor_t*>(node)->left,context))return false;
+if(!visit(static_cast<bitor_expr_bitor_t*>(node)->right,context))return false;
+        return true;
+
+    case NODE_BITOR_EXPR_BITAND:
+        if(!visit(static_cast<bitor_expr_bitand_t*>(node)->expr,context))return false;
         return true;
 
     case NODE_EXPR_ADD:
@@ -2547,26 +2651,26 @@ if(!visit(static_cast<logic_expr_eq_le_t*>(node)->right,context))return false;
         if(!visit(static_cast<composed_type_ptr_t*>(node)->pointer_type,context))return false;
         return true;
 
-    case NODE_COMPOSED_TYPE_NSIZEDARR:
-        if(!visit(static_cast<composed_type_nsizedarr_t*>(node)->element_type,context))return false;
-        return true;
-
     case NODE_COMPOSED_TYPE_SIZEDARR:
         if(!visit(static_cast<composed_type_sizedarr_t*>(node)->element_type,context))return false;
 if(!visit(static_cast<composed_type_sizedarr_t*>(node)->array_size,context))return false;
+        return true;
+
+    case NODE_COMPOSED_TYPE_NSIZEDARR:
+        if(!visit(static_cast<composed_type_nsizedarr_t*>(node)->element_type,context))return false;
         return true;
 
     case NODE_ELSE_DEFAULT:
         if(!visit(static_cast<else_default_t*>(node)->statements,context))return false;
         return true;
 
-    case NODE_STRUCTMEMBERS_SINGMEM:
-        if(!visit(static_cast<structmembers_singmem_t*>(node)->def_type,context))return false;
-        return true;
-
     case NODE_STRUCTMEMBERS_MULTIMEM:
         if(!visit(static_cast<structmembers_multimem_t*>(node)->def_type,context))return false;
 if(!visit(static_cast<structmembers_multimem_t*>(node)->other_members,context))return false;
+        return true;
+
+    case NODE_STRUCTMEMBERS_SINGMEM:
+        if(!visit(static_cast<structmembers_singmem_t*>(node)->def_type,context))return false;
         return true;
 
     case NODE_STRUCTMEMBERS_EMPTY:
@@ -2614,21 +2718,25 @@ if(!visit(static_cast<declaration_fn_t*>(node)->return_type,context))return fals
         
         return true;
 
-    case NODE_STATEMENT_RETURN_EMPTY:
-        
-        return true;
-
     case NODE_STATEMENT_RETURN_STH:
         if(!visit(static_cast<statement_return_sth_t*>(node)->value,context))return false;
         return true;
 
-    case NODE_STATEMENTS_STMT:
-        if(!visit(static_cast<statements_stmt_t*>(node)->stmt,context))return false;
+    case NODE_STATEMENT_RETURN_EMPTY:
+        
         return true;
 
-    case NODE_STATEMENTS_MULTISTMT:
-        if(!visit(static_cast<statements_multistmt_t*>(node)->stmt,context))return false;
-if(!visit(static_cast<statements_multistmt_t*>(node)->other_stmts,context))return false;
+    case NODE_STATEMENTS_NONEMPTY_MULTISTMT:
+        if(!visit(static_cast<statements_nonempty_multistmt_t*>(node)->stmt,context))return false;
+if(!visit(static_cast<statements_nonempty_multistmt_t*>(node)->other_stmts,context))return false;
+        return true;
+
+    case NODE_STATEMENTS_NONEMPTY_STMT:
+        if(!visit(static_cast<statements_nonempty_stmt_t*>(node)->stmt,context))return false;
+        return true;
+
+    case NODE_STATEMENTS_HASSTATEMENTS:
+        if(!visit(static_cast<statements_hasstatements_t*>(node)->statements,context))return false;
         return true;
 
     case NODE_STATEMENTS_EMPTY:
@@ -2643,20 +2751,37 @@ if(!visit(static_cast<statements_multistmt_t*>(node)->other_stmts,context))retur
         
         return true;
 
-    case NODE_ARGLIST_NONEMPTY_SINGARG:
-        if(!visit(static_cast<arglist_nonempty_singarg_t*>(node)->arg_type,context))return false;
+    case NODE_PARAMETER_LIST_NONEMPTY_MULTIARG:
+        if(!visit(static_cast<parameter_list_nonempty_multiarg_t*>(node)->arg_type,context))return false;
+if(!visit(static_cast<parameter_list_nonempty_multiarg_t*>(node)->other_args,context))return false;
         return true;
 
-    case NODE_ARGLIST_NONEMPTY_MULTIARG:
-        if(!visit(static_cast<arglist_nonempty_multiarg_t*>(node)->arg_type,context))return false;
-if(!visit(static_cast<arglist_nonempty_multiarg_t*>(node)->other_args,context))return false;
+    case NODE_PARAMETER_LIST_NONEMPTY_SINGARG:
+        if(!visit(static_cast<parameter_list_nonempty_singarg_t*>(node)->arg_type,context))return false;
         return true;
 
-    case NODE_ARGLIST_HASARG:
-        if(!visit(static_cast<arglist_hasarg_t*>(node)->args,context))return false;
+    case NODE_PARAMETER_LIST_HASARG:
+        if(!visit(static_cast<parameter_list_hasarg_t*>(node)->args,context))return false;
         return true;
 
-    case NODE_ARGLIST_EMPTY:
+    case NODE_PARAMETER_LIST_EMPTY:
+        
+        return true;
+
+    case NODE_ARGUMENT_LIST_NONEMPTY_MULTIARG:
+        if(!visit(static_cast<argument_list_nonempty_multiarg_t*>(node)->value,context))return false;
+if(!visit(static_cast<argument_list_nonempty_multiarg_t*>(node)->other_args,context))return false;
+        return true;
+
+    case NODE_ARGUMENT_LIST_NONEMPTY_SINGARG:
+        if(!visit(static_cast<argument_list_nonempty_singarg_t*>(node)->value,context))return false;
+        return true;
+
+    case NODE_ARGUMENT_LIST_HASARG:
+        if(!visit(static_cast<argument_list_hasarg_t*>(node)->args,context))return false;
+        return true;
+
+    case NODE_ARGUMENT_LIST_EMPTY:
         
         return true;
 
@@ -2745,16 +2870,21 @@ bool check_flow_statement_while(statement_while_t* node, sematic_context_t* cont
 	if(!propagate_flow(node,node->while_stmt,context))return false;
     return true;
 }
-bool check_flow_statements_stmt(statements_stmt_t* node, sematic_context_t* context){
+bool check_flow_statements_nonempty_stmt(statements_nonempty_stmt_t* node, sematic_context_t* context){
     if(!visit(node->stmt,context))return false;
 	if(!propagate_flow(node,node->stmt,context))return false;
     return true;
 }
-bool check_flow_statements_multistmt(statements_multistmt_t* node, sematic_context_t* context){
+bool check_flow_statements_nonempty_multistmt(statements_nonempty_multistmt_t* node, sematic_context_t* context){
     if(!visit(node->stmt,context))return false;
 	if(!visit(node->other_stmts,context))return false;
 	if(!check_unreachable(node,node->stmt,node->other_stmts,context))return false;
 	if(!combine_sequential_flow(node,node->stmt,node->other_stmts,context))return false;
+    return true;
+}
+bool check_flow_statements_hasstatements(statements_hasstatements_t* node, sematic_context_t* context){
+    if(!visit(node->statements,context))return false;
+	if(!propagate_flow(node,node->statements,context))return false;
     return true;
 }
 bool check_flow_statements_empty(statements_empty_t* node, sematic_context_t* context){
@@ -2837,12 +2967,16 @@ bool flow_check(ast_node_t* node,sematic_context_t* context){
         return check_flow_statement_while(static_cast<statement_while_t*>(node),context);
         break;
 
-    case NODE_STATEMENTS_STMT:
-        return check_flow_statements_stmt(static_cast<statements_stmt_t*>(node),context);
+    case NODE_STATEMENTS_NONEMPTY_STMT:
+        return check_flow_statements_nonempty_stmt(static_cast<statements_nonempty_stmt_t*>(node),context);
         break;
 
-    case NODE_STATEMENTS_MULTISTMT:
-        return check_flow_statements_multistmt(static_cast<statements_multistmt_t*>(node),context);
+    case NODE_STATEMENTS_NONEMPTY_MULTISTMT:
+        return check_flow_statements_nonempty_multistmt(static_cast<statements_nonempty_multistmt_t*>(node),context);
+        break;
+
+    case NODE_STATEMENTS_HASSTATEMENTS:
+        return check_flow_statements_hasstatements(static_cast<statements_hasstatements_t*>(node),context);
         break;
 
     case NODE_STATEMENTS_EMPTY:
@@ -2869,10 +3003,6 @@ bool flow_check(ast_node_t* node,sematic_context_t* context){
         return check_flow_elseif_else_empty(static_cast<elseif_else_empty_t*>(node),context);
         break;
 
-    case NODE_FACTOR_ID:
-        
-        return true;
-
     case NODE_FACTOR_NUM:
         
         return true;
@@ -2889,17 +3019,17 @@ bool flow_check(ast_node_t* node,sematic_context_t* context){
         if(!visit(static_cast<glued_factor_paren_t*>(node)->expr,context))return false;
         return true;
 
-    case NODE_GLUED_FACTOR_DEF:
-        if(!visit(static_cast<glued_factor_def_t*>(node)->left,context))return false;
+    case NODE_GLUED_FACTOR_CALL:
+        if(!visit(static_cast<glued_factor_call_t*>(node)->left,context))return false;
+if(!visit(static_cast<glued_factor_call_t*>(node)->args,context))return false;
+        return true;
+
+    case NODE_GLUED_FACTOR_LVALUE:
+        if(!visit(static_cast<glued_factor_lvalue_t*>(node)->value,context))return false;
         return true;
 
     case NODE_GLUED_FACTOR_VALUE:
         if(!visit(static_cast<glued_factor_value_t*>(node)->value,context))return false;
-        return true;
-
-    case NODE_GLUED_FACTOR_CALL:
-        if(!visit(static_cast<glued_factor_call_t*>(node)->left,context))return false;
-if(!visit(static_cast<glued_factor_call_t*>(node)->args,context))return false;
         return true;
 
     case NODE_SINGLE_OP_FACTOR_BITNOT:
@@ -2950,28 +3080,40 @@ if(!visit(static_cast<term_div_t*>(node)->right,context))return false;
 if(!visit(static_cast<term_mod_t*>(node)->right,context))return false;
         return true;
 
-    case NODE_TERM_BITAND:
-        if(!visit(static_cast<term_bitand_t*>(node)->left,context))return false;
-if(!visit(static_cast<term_bitand_t*>(node)->right,context))return false;
-        return true;
-
-    case NODE_TERM_BITOR:
-        if(!visit(static_cast<term_bitor_t*>(node)->left,context))return false;
-if(!visit(static_cast<term_bitor_t*>(node)->right,context))return false;
-        return true;
-
-    case NODE_TERM_SHIFTLEFT:
-        if(!visit(static_cast<term_shiftleft_t*>(node)->left,context))return false;
-if(!visit(static_cast<term_shiftleft_t*>(node)->right,context))return false;
-        return true;
-
-    case NODE_TERM_SHIFTRIGHT:
-        if(!visit(static_cast<term_shiftright_t*>(node)->left,context))return false;
-if(!visit(static_cast<term_shiftright_t*>(node)->right,context))return false;
-        return true;
-
     case NODE_TERM_FACTOR:
         if(!visit(static_cast<term_factor_t*>(node)->expr,context))return false;
+        return true;
+
+    case NODE_SHIFT_EXPR_SHIFTLEFT:
+        if(!visit(static_cast<shift_expr_shiftleft_t*>(node)->left,context))return false;
+if(!visit(static_cast<shift_expr_shiftleft_t*>(node)->right,context))return false;
+        return true;
+
+    case NODE_SHIFT_EXPR_SHIFTRIGHT:
+        if(!visit(static_cast<shift_expr_shiftright_t*>(node)->left,context))return false;
+if(!visit(static_cast<shift_expr_shiftright_t*>(node)->right,context))return false;
+        return true;
+
+    case NODE_SHIFT_EXPR_EXPR:
+        if(!visit(static_cast<shift_expr_expr_t*>(node)->expr,context))return false;
+        return true;
+
+    case NODE_BITAND_EXPR_BITAND:
+        if(!visit(static_cast<bitand_expr_bitand_t*>(node)->left,context))return false;
+if(!visit(static_cast<bitand_expr_bitand_t*>(node)->right,context))return false;
+        return true;
+
+    case NODE_BITAND_EXPR_SHIFT:
+        if(!visit(static_cast<bitand_expr_shift_t*>(node)->expr,context))return false;
+        return true;
+
+    case NODE_BITOR_EXPR_BITOR:
+        if(!visit(static_cast<bitor_expr_bitor_t*>(node)->left,context))return false;
+if(!visit(static_cast<bitor_expr_bitor_t*>(node)->right,context))return false;
+        return true;
+
+    case NODE_BITOR_EXPR_BITAND:
+        if(!visit(static_cast<bitor_expr_bitand_t*>(node)->expr,context))return false;
         return true;
 
     case NODE_EXPR_ADD:
@@ -3130,13 +3272,13 @@ if(!visit(static_cast<assign_expr_shiftright_assign_t*>(node)->right,context))re
         if(!visit(static_cast<composed_type_ptr_t*>(node)->pointer_type,context))return false;
         return true;
 
-    case NODE_COMPOSED_TYPE_NSIZEDARR:
-        if(!visit(static_cast<composed_type_nsizedarr_t*>(node)->element_type,context))return false;
-        return true;
-
     case NODE_COMPOSED_TYPE_SIZEDARR:
         if(!visit(static_cast<composed_type_sizedarr_t*>(node)->element_type,context))return false;
 if(!visit(static_cast<composed_type_sizedarr_t*>(node)->array_size,context))return false;
+        return true;
+
+    case NODE_COMPOSED_TYPE_NSIZEDARR:
+        if(!visit(static_cast<composed_type_nsizedarr_t*>(node)->element_type,context))return false;
         return true;
 
     case NODE_DEFINITION_DEFTYPE:
@@ -3148,13 +3290,13 @@ if(!visit(static_cast<definition_deftype_t*>(node)->value,context))return false;
         if(!visit(static_cast<definition_defntype_t*>(node)->value,context))return false;
         return true;
 
-    case NODE_STRUCTMEMBERS_SINGMEM:
-        if(!visit(static_cast<structmembers_singmem_t*>(node)->def_type,context))return false;
-        return true;
-
     case NODE_STRUCTMEMBERS_MULTIMEM:
         if(!visit(static_cast<structmembers_multimem_t*>(node)->def_type,context))return false;
 if(!visit(static_cast<structmembers_multimem_t*>(node)->other_members,context))return false;
+        return true;
+
+    case NODE_STRUCTMEMBERS_SINGMEM:
+        if(!visit(static_cast<structmembers_singmem_t*>(node)->def_type,context))return false;
         return true;
 
     case NODE_STRUCTMEMBERS_EMPTY:
@@ -3190,20 +3332,37 @@ if(!visit(static_cast<declaration_fn_t*>(node)->return_type,context))return fals
         
         return true;
 
-    case NODE_ARGLIST_NONEMPTY_SINGARG:
-        if(!visit(static_cast<arglist_nonempty_singarg_t*>(node)->arg_type,context))return false;
+    case NODE_PARAMETER_LIST_NONEMPTY_MULTIARG:
+        if(!visit(static_cast<parameter_list_nonempty_multiarg_t*>(node)->arg_type,context))return false;
+if(!visit(static_cast<parameter_list_nonempty_multiarg_t*>(node)->other_args,context))return false;
         return true;
 
-    case NODE_ARGLIST_NONEMPTY_MULTIARG:
-        if(!visit(static_cast<arglist_nonempty_multiarg_t*>(node)->arg_type,context))return false;
-if(!visit(static_cast<arglist_nonempty_multiarg_t*>(node)->other_args,context))return false;
+    case NODE_PARAMETER_LIST_NONEMPTY_SINGARG:
+        if(!visit(static_cast<parameter_list_nonempty_singarg_t*>(node)->arg_type,context))return false;
         return true;
 
-    case NODE_ARGLIST_HASARG:
-        if(!visit(static_cast<arglist_hasarg_t*>(node)->args,context))return false;
+    case NODE_PARAMETER_LIST_HASARG:
+        if(!visit(static_cast<parameter_list_hasarg_t*>(node)->args,context))return false;
         return true;
 
-    case NODE_ARGLIST_EMPTY:
+    case NODE_PARAMETER_LIST_EMPTY:
+        
+        return true;
+
+    case NODE_ARGUMENT_LIST_NONEMPTY_MULTIARG:
+        if(!visit(static_cast<argument_list_nonempty_multiarg_t*>(node)->value,context))return false;
+if(!visit(static_cast<argument_list_nonempty_multiarg_t*>(node)->other_args,context))return false;
+        return true;
+
+    case NODE_ARGUMENT_LIST_NONEMPTY_SINGARG:
+        if(!visit(static_cast<argument_list_nonempty_singarg_t*>(node)->value,context))return false;
+        return true;
+
+    case NODE_ARGUMENT_LIST_HASARG:
+        if(!visit(static_cast<argument_list_hasarg_t*>(node)->args,context))return false;
+        return true;
+
+    case NODE_ARGUMENT_LIST_EMPTY:
         
         return true;
 
@@ -3256,5 +3415,7 @@ bool do_sematic(const std::vector<ast_node_t*>& ast, sematic_context_t& context)
 
 bool do_sematic(const std::vector<ast_node_t*>& ast){
     sematic_context_t context;
+    // create global symbol table
+    context.push_symbol_table(nullptr);
     return do_sematic(ast, context);
 }

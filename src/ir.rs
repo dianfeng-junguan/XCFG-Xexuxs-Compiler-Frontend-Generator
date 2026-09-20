@@ -657,7 +657,7 @@ pub fn test_parse_ir_rules(){
 }
 #[test]
 pub fn test_generate_ir_source() {
-    let parser_rules=parse_parser_rules("parser.rule");
+    let parser_rules=parse_parser_rules("parser.rule").unwrap();
     let irr=parse_ir_rule("ir.rule").unwrap();
     generate_ir_source(&irr,&parser_rules).unwrap();
 }

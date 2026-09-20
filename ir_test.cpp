@@ -693,11 +693,6 @@ return tempvar_t::empty();
 
 }
         
-tempvar_t ir_factor_id(factor_id_t* node,ir_graph_t* graph,ir_context_t* context){
-    
-    return tempvar_t::empty();
-}
-
 tempvar_t ir_factor_num(factor_num_t* node,ir_graph_t* graph,ir_context_t* context){
     
     return tempvar_t::empty();
@@ -713,14 +708,53 @@ tempvar_t ir_factor_str(factor_str_t* node,ir_graph_t* graph,ir_context_t* conte
     return tempvar_t::empty();
 }
 
-tempvar_t ir_glued_factor_def(glued_factor_def_t* node,ir_graph_t* graph,ir_context_t* context){
-    visit(node->left,graph,context);
-    return tempvar_t::empty();
-}
-
 tempvar_t ir_glued_factor_call(glued_factor_call_t* node,ir_graph_t* graph,ir_context_t* context){
     visit(node->left,graph,context);
 	visit(node->args,graph,context);
+    return tempvar_t::empty();
+}
+
+tempvar_t ir_glued_factor_lvalue(glued_factor_lvalue_t* node,ir_graph_t* graph,ir_context_t* context){
+    visit(node->value,graph,context);
+    return tempvar_t::empty();
+}
+
+tempvar_t ir_shift_expr_shiftleft(shift_expr_shiftleft_t* node,ir_graph_t* graph,ir_context_t* context){
+    visit(node->left,graph,context);
+	visit(node->right,graph,context);
+    return tempvar_t::empty();
+}
+
+tempvar_t ir_shift_expr_shiftright(shift_expr_shiftright_t* node,ir_graph_t* graph,ir_context_t* context){
+    visit(node->left,graph,context);
+	visit(node->right,graph,context);
+    return tempvar_t::empty();
+}
+
+tempvar_t ir_shift_expr_expr(shift_expr_expr_t* node,ir_graph_t* graph,ir_context_t* context){
+    visit(node->expr,graph,context);
+    return tempvar_t::empty();
+}
+
+tempvar_t ir_bitand_expr_bitand(bitand_expr_bitand_t* node,ir_graph_t* graph,ir_context_t* context){
+    visit(node->left,graph,context);
+	visit(node->right,graph,context);
+    return tempvar_t::empty();
+}
+
+tempvar_t ir_bitand_expr_shift(bitand_expr_shift_t* node,ir_graph_t* graph,ir_context_t* context){
+    visit(node->expr,graph,context);
+    return tempvar_t::empty();
+}
+
+tempvar_t ir_bitor_expr_bitor(bitor_expr_bitor_t* node,ir_graph_t* graph,ir_context_t* context){
+    visit(node->left,graph,context);
+	visit(node->right,graph,context);
+    return tempvar_t::empty();
+}
+
+tempvar_t ir_bitor_expr_bitand(bitor_expr_bitand_t* node,ir_graph_t* graph,ir_context_t* context){
+    visit(node->expr,graph,context);
     return tempvar_t::empty();
 }
 
@@ -764,14 +798,14 @@ tempvar_t ir_composed_type_ptr(composed_type_ptr_t* node,ir_graph_t* graph,ir_co
     return tempvar_t::empty();
 }
 
-tempvar_t ir_composed_type_nsizedarr(composed_type_nsizedarr_t* node,ir_graph_t* graph,ir_context_t* context){
-    visit(node->element_type,graph,context);
-    return tempvar_t::empty();
-}
-
 tempvar_t ir_composed_type_sizedarr(composed_type_sizedarr_t* node,ir_graph_t* graph,ir_context_t* context){
     visit(node->element_type,graph,context);
 	visit(node->array_size,graph,context);
+    return tempvar_t::empty();
+}
+
+tempvar_t ir_composed_type_nsizedarr(composed_type_nsizedarr_t* node,ir_graph_t* graph,ir_context_t* context){
+    visit(node->element_type,graph,context);
     return tempvar_t::empty();
 }
 
@@ -815,14 +849,14 @@ tempvar_t ir_while_default(while_default_t* node,ir_graph_t* graph,ir_context_t*
     return tempvar_t::empty();
 }
 
-tempvar_t ir_structmembers_singmem(structmembers_singmem_t* node,ir_graph_t* graph,ir_context_t* context){
-    visit(node->def_type,graph,context);
-    return tempvar_t::empty();
-}
-
 tempvar_t ir_structmembers_multimem(structmembers_multimem_t* node,ir_graph_t* graph,ir_context_t* context){
     visit(node->def_type,graph,context);
 	visit(node->other_members,graph,context);
+    return tempvar_t::empty();
+}
+
+tempvar_t ir_structmembers_singmem(structmembers_singmem_t* node,ir_graph_t* graph,ir_context_t* context){
+    visit(node->def_type,graph,context);
     return tempvar_t::empty();
 }
 
@@ -877,14 +911,19 @@ tempvar_t ir_statement_continue(statement_continue_t* node,ir_graph_t* graph,ir_
     return tempvar_t::empty();
 }
 
-tempvar_t ir_statements_stmt(statements_stmt_t* node,ir_graph_t* graph,ir_context_t* context){
+tempvar_t ir_statements_nonempty_multistmt(statements_nonempty_multistmt_t* node,ir_graph_t* graph,ir_context_t* context){
+    visit(node->stmt,graph,context);
+	visit(node->other_stmts,graph,context);
+    return tempvar_t::empty();
+}
+
+tempvar_t ir_statements_nonempty_stmt(statements_nonempty_stmt_t* node,ir_graph_t* graph,ir_context_t* context){
     visit(node->stmt,graph,context);
     return tempvar_t::empty();
 }
 
-tempvar_t ir_statements_multistmt(statements_multistmt_t* node,ir_graph_t* graph,ir_context_t* context){
-    visit(node->stmt,graph,context);
-	visit(node->other_stmts,graph,context);
+tempvar_t ir_statements_hasstatements(statements_hasstatements_t* node,ir_graph_t* graph,ir_context_t* context){
+    visit(node->statements,graph,context);
     return tempvar_t::empty();
 }
 
@@ -903,23 +942,44 @@ tempvar_t ir_func_returntype_void(func_returntype_void_t* node,ir_graph_t* graph
     return tempvar_t::empty();
 }
 
-tempvar_t ir_arglist_nonempty_singarg(arglist_nonempty_singarg_t* node,ir_graph_t* graph,ir_context_t* context){
-    visit(node->arg_type,graph,context);
-    return tempvar_t::empty();
-}
-
-tempvar_t ir_arglist_nonempty_multiarg(arglist_nonempty_multiarg_t* node,ir_graph_t* graph,ir_context_t* context){
+tempvar_t ir_parameter_list_nonempty_multiarg(parameter_list_nonempty_multiarg_t* node,ir_graph_t* graph,ir_context_t* context){
     visit(node->arg_type,graph,context);
 	visit(node->other_args,graph,context);
     return tempvar_t::empty();
 }
 
-tempvar_t ir_arglist_hasarg(arglist_hasarg_t* node,ir_graph_t* graph,ir_context_t* context){
+tempvar_t ir_parameter_list_nonempty_singarg(parameter_list_nonempty_singarg_t* node,ir_graph_t* graph,ir_context_t* context){
+    visit(node->arg_type,graph,context);
+    return tempvar_t::empty();
+}
+
+tempvar_t ir_parameter_list_hasarg(parameter_list_hasarg_t* node,ir_graph_t* graph,ir_context_t* context){
     visit(node->args,graph,context);
     return tempvar_t::empty();
 }
 
-tempvar_t ir_arglist_empty(arglist_empty_t* node,ir_graph_t* graph,ir_context_t* context){
+tempvar_t ir_parameter_list_empty(parameter_list_empty_t* node,ir_graph_t* graph,ir_context_t* context){
+    
+    return tempvar_t::empty();
+}
+
+tempvar_t ir_argument_list_nonempty_multiarg(argument_list_nonempty_multiarg_t* node,ir_graph_t* graph,ir_context_t* context){
+    visit(node->value,graph,context);
+	visit(node->other_args,graph,context);
+    return tempvar_t::empty();
+}
+
+tempvar_t ir_argument_list_nonempty_singarg(argument_list_nonempty_singarg_t* node,ir_graph_t* graph,ir_context_t* context){
+    visit(node->value,graph,context);
+    return tempvar_t::empty();
+}
+
+tempvar_t ir_argument_list_hasarg(argument_list_hasarg_t* node,ir_graph_t* graph,ir_context_t* context){
+    visit(node->args,graph,context);
+    return tempvar_t::empty();
+}
+
+tempvar_t ir_argument_list_empty(argument_list_empty_t* node,ir_graph_t* graph,ir_context_t* context){
     
     return tempvar_t::empty();
 }
@@ -962,11 +1022,7 @@ tempvar_t _visit(ast_node_t* node,ir_graph_t* graph,ir_context_t* context, bool 
     }
     tempvar_t temp_result=context->create_tempvar("");
     switch(node->get_kind()){
-        	case NODE_FACTOR_ID:
-	temp_result=ir_factor_id(static_cast<factor_id_t*>(node),graph,context);
-	break;
-
-		case NODE_FACTOR_NUM:
+        	case NODE_FACTOR_NUM:
 	temp_result=ir_factor_num(static_cast<factor_num_t*>(node),graph,context);
 	break;
 
@@ -982,16 +1038,16 @@ tempvar_t _visit(ast_node_t* node,ir_graph_t* graph,ir_context_t* context, bool 
 	temp_result=ir_glued_factor_paren(static_cast<glued_factor_paren_t*>(node),graph,context);
 	break;
 
-		case NODE_GLUED_FACTOR_DEF:
-	temp_result=ir_glued_factor_def(static_cast<glued_factor_def_t*>(node),graph,context);
+		case NODE_GLUED_FACTOR_CALL:
+	temp_result=ir_glued_factor_call(static_cast<glued_factor_call_t*>(node),graph,context);
+	break;
+
+		case NODE_GLUED_FACTOR_LVALUE:
+	temp_result=ir_glued_factor_lvalue(static_cast<glued_factor_lvalue_t*>(node),graph,context);
 	break;
 
 		case NODE_GLUED_FACTOR_VALUE:
 	temp_result=ir_glued_factor_value(static_cast<glued_factor_value_t*>(node),graph,context);
-	break;
-
-		case NODE_GLUED_FACTOR_CALL:
-	temp_result=ir_glued_factor_call(static_cast<glued_factor_call_t*>(node),graph,context);
 	break;
 
 		case NODE_SINGLE_OP_FACTOR_BITNOT:
@@ -1038,24 +1094,36 @@ tempvar_t _visit(ast_node_t* node,ir_graph_t* graph,ir_context_t* context, bool 
 	temp_result=ir_term_mod(static_cast<term_mod_t*>(node),graph,context);
 	break;
 
-		case NODE_TERM_BITAND:
-	temp_result=ir_term_bitand(static_cast<term_bitand_t*>(node),graph,context);
-	break;
-
-		case NODE_TERM_BITOR:
-	temp_result=ir_term_bitor(static_cast<term_bitor_t*>(node),graph,context);
-	break;
-
-		case NODE_TERM_SHIFTLEFT:
-	temp_result=ir_term_shiftleft(static_cast<term_shiftleft_t*>(node),graph,context);
-	break;
-
-		case NODE_TERM_SHIFTRIGHT:
-	temp_result=ir_term_shiftright(static_cast<term_shiftright_t*>(node),graph,context);
-	break;
-
 		case NODE_TERM_FACTOR:
 	temp_result=ir_term_factor(static_cast<term_factor_t*>(node),graph,context);
+	break;
+
+		case NODE_SHIFT_EXPR_SHIFTLEFT:
+	temp_result=ir_shift_expr_shiftleft(static_cast<shift_expr_shiftleft_t*>(node),graph,context);
+	break;
+
+		case NODE_SHIFT_EXPR_SHIFTRIGHT:
+	temp_result=ir_shift_expr_shiftright(static_cast<shift_expr_shiftright_t*>(node),graph,context);
+	break;
+
+		case NODE_SHIFT_EXPR_EXPR:
+	temp_result=ir_shift_expr_expr(static_cast<shift_expr_expr_t*>(node),graph,context);
+	break;
+
+		case NODE_BITAND_EXPR_BITAND:
+	temp_result=ir_bitand_expr_bitand(static_cast<bitand_expr_bitand_t*>(node),graph,context);
+	break;
+
+		case NODE_BITAND_EXPR_SHIFT:
+	temp_result=ir_bitand_expr_shift(static_cast<bitand_expr_shift_t*>(node),graph,context);
+	break;
+
+		case NODE_BITOR_EXPR_BITOR:
+	temp_result=ir_bitor_expr_bitor(static_cast<bitor_expr_bitor_t*>(node),graph,context);
+	break;
+
+		case NODE_BITOR_EXPR_BITAND:
+	temp_result=ir_bitor_expr_bitand(static_cast<bitor_expr_bitand_t*>(node),graph,context);
 	break;
 
 		case NODE_EXPR_ADD:
@@ -1194,12 +1262,12 @@ tempvar_t _visit(ast_node_t* node,ir_graph_t* graph,ir_context_t* context, bool 
 	temp_result=ir_composed_type_ptr(static_cast<composed_type_ptr_t*>(node),graph,context);
 	break;
 
-		case NODE_COMPOSED_TYPE_NSIZEDARR:
-	temp_result=ir_composed_type_nsizedarr(static_cast<composed_type_nsizedarr_t*>(node),graph,context);
-	break;
-
 		case NODE_COMPOSED_TYPE_SIZEDARR:
 	temp_result=ir_composed_type_sizedarr(static_cast<composed_type_sizedarr_t*>(node),graph,context);
+	break;
+
+		case NODE_COMPOSED_TYPE_NSIZEDARR:
+	temp_result=ir_composed_type_nsizedarr(static_cast<composed_type_nsizedarr_t*>(node),graph,context);
 	break;
 
 		case NODE_DEFINITION_DEFTYPE:
@@ -1238,12 +1306,12 @@ tempvar_t _visit(ast_node_t* node,ir_graph_t* graph,ir_context_t* context, bool 
 	temp_result=ir_while_default(static_cast<while_default_t*>(node),graph,context);
 	break;
 
-		case NODE_STRUCTMEMBERS_SINGMEM:
-	temp_result=ir_structmembers_singmem(static_cast<structmembers_singmem_t*>(node),graph,context);
-	break;
-
 		case NODE_STRUCTMEMBERS_MULTIMEM:
 	temp_result=ir_structmembers_multimem(static_cast<structmembers_multimem_t*>(node),graph,context);
+	break;
+
+		case NODE_STRUCTMEMBERS_SINGMEM:
+	temp_result=ir_structmembers_singmem(static_cast<structmembers_singmem_t*>(node),graph,context);
 	break;
 
 		case NODE_STRUCTMEMBERS_EMPTY:
@@ -1298,20 +1366,24 @@ tempvar_t _visit(ast_node_t* node,ir_graph_t* graph,ir_context_t* context, bool 
 	temp_result=ir_statement_continue(static_cast<statement_continue_t*>(node),graph,context);
 	break;
 
-		case NODE_STATEMENT_RETURN_EMPTY:
-	temp_result=ir_statement_return_empty(static_cast<statement_return_empty_t*>(node),graph,context);
-	break;
-
 		case NODE_STATEMENT_RETURN_STH:
 	temp_result=ir_statement_return_sth(static_cast<statement_return_sth_t*>(node),graph,context);
 	break;
 
-		case NODE_STATEMENTS_STMT:
-	temp_result=ir_statements_stmt(static_cast<statements_stmt_t*>(node),graph,context);
+		case NODE_STATEMENT_RETURN_EMPTY:
+	temp_result=ir_statement_return_empty(static_cast<statement_return_empty_t*>(node),graph,context);
 	break;
 
-		case NODE_STATEMENTS_MULTISTMT:
-	temp_result=ir_statements_multistmt(static_cast<statements_multistmt_t*>(node),graph,context);
+		case NODE_STATEMENTS_NONEMPTY_MULTISTMT:
+	temp_result=ir_statements_nonempty_multistmt(static_cast<statements_nonempty_multistmt_t*>(node),graph,context);
+	break;
+
+		case NODE_STATEMENTS_NONEMPTY_STMT:
+	temp_result=ir_statements_nonempty_stmt(static_cast<statements_nonempty_stmt_t*>(node),graph,context);
+	break;
+
+		case NODE_STATEMENTS_HASSTATEMENTS:
+	temp_result=ir_statements_hasstatements(static_cast<statements_hasstatements_t*>(node),graph,context);
 	break;
 
 		case NODE_STATEMENTS_EMPTY:
@@ -1326,20 +1398,36 @@ tempvar_t _visit(ast_node_t* node,ir_graph_t* graph,ir_context_t* context, bool 
 	temp_result=ir_func_returntype_void(static_cast<func_returntype_void_t*>(node),graph,context);
 	break;
 
-		case NODE_ARGLIST_NONEMPTY_SINGARG:
-	temp_result=ir_arglist_nonempty_singarg(static_cast<arglist_nonempty_singarg_t*>(node),graph,context);
+		case NODE_PARAMETER_LIST_NONEMPTY_MULTIARG:
+	temp_result=ir_parameter_list_nonempty_multiarg(static_cast<parameter_list_nonempty_multiarg_t*>(node),graph,context);
 	break;
 
-		case NODE_ARGLIST_NONEMPTY_MULTIARG:
-	temp_result=ir_arglist_nonempty_multiarg(static_cast<arglist_nonempty_multiarg_t*>(node),graph,context);
+		case NODE_PARAMETER_LIST_NONEMPTY_SINGARG:
+	temp_result=ir_parameter_list_nonempty_singarg(static_cast<parameter_list_nonempty_singarg_t*>(node),graph,context);
 	break;
 
-		case NODE_ARGLIST_HASARG:
-	temp_result=ir_arglist_hasarg(static_cast<arglist_hasarg_t*>(node),graph,context);
+		case NODE_PARAMETER_LIST_HASARG:
+	temp_result=ir_parameter_list_hasarg(static_cast<parameter_list_hasarg_t*>(node),graph,context);
 	break;
 
-		case NODE_ARGLIST_EMPTY:
-	temp_result=ir_arglist_empty(static_cast<arglist_empty_t*>(node),graph,context);
+		case NODE_PARAMETER_LIST_EMPTY:
+	temp_result=ir_parameter_list_empty(static_cast<parameter_list_empty_t*>(node),graph,context);
+	break;
+
+		case NODE_ARGUMENT_LIST_NONEMPTY_MULTIARG:
+	temp_result=ir_argument_list_nonempty_multiarg(static_cast<argument_list_nonempty_multiarg_t*>(node),graph,context);
+	break;
+
+		case NODE_ARGUMENT_LIST_NONEMPTY_SINGARG:
+	temp_result=ir_argument_list_nonempty_singarg(static_cast<argument_list_nonempty_singarg_t*>(node),graph,context);
+	break;
+
+		case NODE_ARGUMENT_LIST_HASARG:
+	temp_result=ir_argument_list_hasarg(static_cast<argument_list_hasarg_t*>(node),graph,context);
+	break;
+
+		case NODE_ARGUMENT_LIST_EMPTY:
+	temp_result=ir_argument_list_empty(static_cast<argument_list_empty_t*>(node),graph,context);
 	break;
 
 		case NODE_FUNCTION_DEFAULT:

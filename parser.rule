@@ -1,14 +1,13 @@
 $factor:
-id:identifier@value
 num:#NUMBER@value
 ch:#CHAR@value
 str:#STRING@value
 
 $glued_factor:
 paren: openparen $ultimate_expr@expr closedparen
-def: $lvalue@left property identifier@right
+call: $lvalue@left openparen $argument_list@args closedparen
+lvalue: $lvalue@value
 value: $factor@value
-call: $lvalue@left openparen $arglist@args closedparen
 
 $single_op_factor:
 bitnot: bitnot $single_op_factor@expr
@@ -19,40 +18,49 @@ not: not $single_op_factor@expr
 none: $glued_factor@expr
 
 $power_factor:
-pow: $single_op_factor@left bitxor $power_factor@right
+pow: $power_factor@left bitxor $single_op_factor@right
 none: $single_op_factor@expr
 
 $term:
-mul: $power_factor@left star $term@right
-div: $power_factor@left slash $term@right
-mod: $power_factor@left percent $term@right
-bitand: $power_factor@left bitand $term@right
-bitor: $power_factor@left bitor $term@right
-shiftleft: $power_factor@left shiftleft $term@right
-shiftright: $power_factor@left shiftright $term@right
+mul: $term@left star $power_factor@right
+div: $term@left slash $power_factor@right
+mod: $term@left percent $power_factor@right
 factor: $power_factor@expr
 
+$shift_expr:
+shiftleft: $shift_expr@left shiftleft $expr@right
+shiftright: $shift_expr@left shiftright $expr@right
+expr: $expr@expr
+
+$bitand_expr:
+bitand: $bitand_expr@left bitand $shift_expr@right
+shift: $shift_expr@expr
+
+$bitor_expr:
+bitor: $bitor_expr@left bitor $bitand_expr@right
+bitand: $bitand_expr@expr
+
 $expr:
-add: $term@left add $expr@right
-sub: $term@left minus $expr@right
+add: $expr@left add $term@right
+sub: $expr@left minus $term@right
 term: $term@expr
 
 $logic_expr_and:
-and: $expr@left and $logic_expr_and@right
-none: $expr@expr
+and: $logic_expr_and@left and $logic_expr_eq@right
+none: $logic_expr_eq@expr
 
 $logic_expr_or:
-or: $logic_expr_and@left or $logic_expr_or@right
+or: $logic_expr_or@left or $logic_expr_and@right
 none: $logic_expr_and@expr
 
 $logic_expr_eq:
-eq: $logic_expr_or@left equal $logic_expr_eq@right
-neq: $logic_expr_or@left unequal $logic_expr_eq@right
-gt: $logic_expr_or@left greaterthan $logic_expr_eq@right
-lt: $logic_expr_or@left lessthan $logic_expr_eq@right
-ge: $logic_expr_or@left greaterequal $logic_expr_eq@right
-le: $logic_expr_or@left lessequal $logic_expr_eq@right
-none: $logic_expr_or@expr
+eq: $logic_expr_eq@left equal $bitor_expr@right
+neq: $logic_expr_eq@left unequal $bitor_expr@right
+gt: $logic_expr_eq@left greaterthan $bitor_expr@right
+lt: $logic_expr_eq@left lessthan $bitor_expr@right
+ge: $logic_expr_eq@left greaterequal $bitor_expr@right
+le: $logic_expr_eq@left lessequal $bitor_expr@right
+none: $bitor_expr@expr
 
 $assign_expr:
 assign: $lvalue@left assign $assign_expr@right
@@ -65,7 +73,7 @@ bitand_assign: $lvalue@left bitandassign $assign_expr@right
 bitor_assign: $lvalue@left bitorassign $assign_expr@right
 shiftleft_assign: $lvalue@left shiftleftassign $assign_expr@right
 shiftright_assign: $lvalue@left shiftrightassign $assign_expr@right
-logic_expr: $logic_expr_eq@expr
+logic_expr: $logic_expr_or@expr
 
 $ultimate_expr:
 def: $assign_expr@expr
@@ -76,15 +84,15 @@ deref: star $lvalue@derefee
 id: identifier@id
 
 $lvalue:
-prop: $lvalue_noproperty@left property identifier@right
+prop: $lvalue@left property identifier@right
 noprop: $lvalue_noproperty@expr
 
 $composed_type:
 raw_type:#TYPEKW@inner_type
 paren:openparen $composed_type@inner_type closedparen
 ptr:$composed_type@pointer_type star
-nsizedarr:$composed_type@element_type open_squaredbracket closed_squaredbracket
 sizedarr:$composed_type@element_type open_squaredbracket $ultimate_expr@array_size closed_squaredbracket
+nsizedarr:$composed_type@element_type open_squaredbracket closed_squaredbracket
 
 $definition:
 deftype:let identifier@name $composed_type@def_type assign $ultimate_expr@value
@@ -94,7 +102,7 @@ $else:
 default:else openbracket $statements@statements closedbracket
 
 $elseif:
-default:else if openbracket $ultimate_expr@condition $statements@statements closedbracket
+default:else if $ultimate_expr@condition openbracket $statements@statements closedbracket
 
 $elseif_else:
 onlyelse:$else@else_block
@@ -108,8 +116,8 @@ $while:
 default:while $ultimate_expr@condition openbracket $statements@statements closedbracket
 
 $structmembers:
-singmem:identifier@name $composed_type@def_type
 multimem:identifier@name $composed_type@def_type comma $structmembers@other_members
+singmem:identifier@name $composed_type@def_type
 empty:!
 
 $struct:
@@ -118,7 +126,7 @@ default:struct identifier@name openbracket $structmembers@members closedbracket
 $declaration:
 varntype:let identifier@name semicolon
 var:let identifier@name colon $composed_type@def_type semicolon
-fn:fn identifier@name openparen $arglist@args closedparen $func_returntype@return_type semicolon
+fn:fn identifier@name openparen $parameter_list@args closedparen $func_returntype@return_type semicolon
 struct:struct identifier@name openbracket $structmembers@members closedbracket
 
 $statement:
@@ -129,28 +137,39 @@ while:$while@while_stmt
 declaration:$declaration@decl_stmt
 break:break semicolon
 continue:continue semicolon
-return_empty:return semicolon
 return_sth:return $ultimate_expr@value semicolon
+return_empty:return semicolon
+
+$statements_nonempty:
+multistmt:$statement@stmt $statements_nonempty@other_stmts
+stmt:$statement@stmt
 
 $statements:
-stmt:$statement@stmt
-multistmt:$statement@stmt $statements@other_stmts
+hasstatements:$statements_nonempty@statements
 empty:!
 
 $func_returntype:
 hastype:minus greaterthan $composed_type@return_type
 void:!
 
-$arglist_nonempty:
+$parameter_list_nonempty:
+multiarg:identifier@name $composed_type@arg_type comma $parameter_list_nonempty@other_args
 singarg:identifier@name $composed_type@arg_type
-multiarg:identifier@name $composed_type@arg_type comma $arglist_nonempty@other_args
 
-$arglist:
-hasarg:$arglist_nonempty@args
+$parameter_list:
+hasarg:$parameter_list_nonempty@args
+empty:!
+
+$argument_list_nonempty:
+multiarg:$ultimate_expr@value comma $argument_list_nonempty@other_args
+singarg:$ultimate_expr@value
+
+$argument_list:
+hasarg:$argument_list_nonempty@args
 empty:!
 
 $function:
-default:fn identifier@name openparen $arglist@args closedparen $func_returntype@return_type openbracket $statements@stmts closedbracket
+default:fn identifier@name openparen $parameter_list@args closedparen $func_returntype@return_type openbracket $statements@stmts closedbracket
 
 $top_statement:
 func_def:$function@func

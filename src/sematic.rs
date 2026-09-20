@@ -2,7 +2,7 @@ use std::{fmt::format, fs::{File, OpenOptions}, io::{Read, Write}};
 
 use regex::regex;
 
-use crate::{parser::{NodeMemberType, ParserRuleSet, parse_parser_rules}, read_from_file, write_to_file};
+use crate::{CompgenError, Diagnosis, STAGE_SEMATIC_CODEGEN, STAGE_SEMATIC_PARSING, parser::{NodeMemberType, ParserRuleSet, parse_parser_rules}, read_from_file, write_to_file};
 #[derive(Clone)]
 struct SematicFuncArgument{
     name:String,
@@ -82,15 +82,25 @@ impl SematicPass {
         format!("bool {}_check(ast_node_t* node,sematic_context_t* context)",self.name)
     }
 }
-pub fn parse_sematic_rules(path:&str, ruleset:&Vec<ParserRuleSet>)->Vec<SematicPass> {
-    let mut f=File::open(path).expect("failed to open sematic rule file");
+pub fn parse_sematic_rules(path:&str, ruleset:&Vec<ParserRuleSet>)->Result<Vec<SematicPass>,Diagnosis> {
+    let mut diagnosis=Diagnosis::new();
+    let mut f=match File::open(path) {
+        Ok(file) => file,
+        Err(_) => {
+            diagnosis.push_err(CompgenError::new(0, 0, STAGE_SEMATIC_PARSING, "failed to open sematic rule file"));
+            return Err(diagnosis);
+        }
+    };
     let mut rule_src=String::new();
-    f.read_to_string(&mut rule_src).expect("failed to read sematic rule file");
+    if f.read_to_string(&mut rule_src).is_err() {
+        diagnosis.push_err(CompgenError::new(0, 0, STAGE_SEMATIC_PARSING, "failed to read sematic rule file"));
+        return Err(diagnosis);
+    }
     let rule_src=rule_src.split("\n").map(|line| line.trim()).collect::<Vec<&str>>();
     let mut passes=Vec::new();
 
     let pat_pass=regex!(r"^\[([\w_]+)\]$");
-    let pat_node=regex!(r"([\w_]+)\.([\w_]+)");
+    let pat_node=regex!(r"^([\w_]+)\.([\w_]+):$");
     let pat_step=regex!(r"^([\w_]+)\(([\w_\,]*)\)$");
 
     let mut current_pass="";
@@ -106,18 +116,23 @@ pub fn parse_sematic_rules(path:&str, ruleset:&Vec<ParserRuleSet>)->Vec<SematicP
                 passes.push(SematicPass { name: current_pass.to_string(), rules: current_rules.clone() });
                 current_rules.clear();
             }
-            current_pass=pass_name.get(1).expect("pat_pass captured the whole but nothing in ()?").as_str();
+            current_pass=pass_name.get(1).map_or("", |m| m.as_str());
 
         }else if let Some(node) = pat_node.captures(line) {
             if current_pass=="" {
-                eprintln!("sematic rule file parser err at line {}: node before pass",i);
+                diagnosis.push_err(CompgenError::new(i+1, 0, STAGE_SEMATIC_PARSING, "sematic rule file parser err: node before pass"));
                 continue;
             }
-            let ruleset=node.get(1).unwrap().as_str();
-            let rule=node.get(2).unwrap().as_str();
-            current_rules.push(SematicRule::new(ruleset,rule));
+            let node_ruleset=node.get(1).map_or("", |m| m.as_str());
+            let node_rule=node.get(2).map_or("", |m| m.as_str());
+            let valid_rule=ruleset.iter().any(|rs| rs.name==node_ruleset && rs.rules.iter().any(|r| r.name==node_rule));
+            if !valid_rule {
+                diagnosis.push_err(CompgenError::new(i+1, 0, STAGE_SEMATIC_PARSING, &format!("sematic rule file parser err: unknown node rule {}.{}", node_ruleset, node_rule)));
+                continue;
+            }
+            current_rules.push(SematicRule::new(node_ruleset,node_rule));
         }else if let Some(calling) = pat_step.captures(line) {
-            let func_name=calling.get(1).unwrap().as_str();
+            let func_name=calling.get(1).map_or("", |m| m.as_str());
             let args=calling.get(2).map_or(Vec::new(), |t| {
                 let t=t.as_str().trim();
                 if t.is_empty() {
@@ -127,36 +142,39 @@ pub fn parse_sematic_rules(path:&str, ruleset:&Vec<ParserRuleSet>)->Vec<SematicP
                 }
             });
             // find the types of these arguments
-            let curr=current_rules.iter().nth_back(0).unwrap();
-            let arg_types=args.iter().map(|a| {
-                let rs=ruleset.iter().find(|r| r.name==curr.ruleset).unwrap();
-                let r=rs.rules.iter().find(|r| r.name==curr.rule).unwrap();
-                r.struct_members.iter().find(|m| &&m.name==a).map_or_else(||{
-                        eprintln!("sematicgen err: failed to find member {} in rule {}.{} while generating code.",a,rs.name,r.name);
-                        return String::new(); 
-                    }
-                    ,|m| {
-                    match m.member_type {
-                        NodeMemberType::Token|NodeMemberType::TokenCategory=>String::from("token_t*"),
-                        NodeMemberType::Node=>{
-                            format!("{}_t*",r.recipe[m.pos_in_recipe].value)
-                        }
-                    }
-                })
-            }).collect::<Vec<String>>();
+            let Some(curr)=current_rules.last() else {
+                diagnosis.push_err(CompgenError::new(i+1, 0, STAGE_SEMATIC_PARSING, "sematic rule file parser err: action before node"));
+                continue;
+            };
+            let Some(rs)=ruleset.iter().find(|r| r.name==curr.ruleset) else { continue; };
+            let Some(r)=rs.rules.iter().find(|r| r.name==curr.rule) else { continue; };
+            let mut arg_types=Vec::new();
+            let mut args_valid=true;
+            for a in &args {
+                let Some(member)=r.struct_members.iter().find(|m| &m.name==a) else {
+                    diagnosis.push_err(CompgenError::new(i+1, 0, STAGE_SEMATIC_PARSING, &format!("sematicgen err: failed to find member {} in rule {}.{} while generating code.",a,rs.name,r.name)));
+                    args_valid=false;
+                    continue;
+                };
+                arg_types.push(match member.member_type {
+                    NodeMemberType::Token|NodeMemberType::TokenCategory=>String::from("token_t*"),
+                    NodeMemberType::Node=>format!("{}_t*",r.recipe[member.pos_in_recipe].value),
+                });
+            }
+            if !args_valid { continue; }
             // push it to the last node (current)
             if let Some(current_rule) = current_rules.iter_mut().nth_back(0){
                 let args: Vec<SematicFuncArgument>=args.iter().enumerate().map(|(index,s)| 
                     SematicFuncArgument { 
                         name: s.to_string(), 
-                        typestr: arg_types.get(index).unwrap().clone() 
+                        typestr: arg_types[index].clone()
                     }).collect();
                 if func_name=="visit" {
                     if args.len()!=1 {
-                        eprintln!("sematicgen err: visit() requires 1 argument but {} are/is provided",args.len());
+                        diagnosis.push_err(CompgenError::new(i+1, 0, STAGE_SEMATIC_PARSING, &format!("sematicgen err: visit() requires 1 argument but {} are/is provided",args.len())));
                         continue;
                     }else if args.get(0).unwrap().typestr=="token_t*" {
-                        eprintln!("sematicgen err: visit() cannot visit token_t");
+                        diagnosis.push_err(CompgenError::new(i+1, 0, STAGE_SEMATIC_PARSING, "sematicgen err: visit() cannot visit token_t"));
                         continue;
                     }else {
                         current_rule.steps.push(SematicStep::Visit(SematicNodeMember { name: args.get(0).unwrap().name.clone() }));
@@ -171,11 +189,11 @@ pub fn parse_sematic_rules(path:&str, ruleset:&Vec<ParserRuleSet>)->Vec<SematicP
                         ));
                 }
             }else {
-                eprintln!("sematic rule file parser err at line {}: node rule before node",i);
+                diagnosis.push_err(CompgenError::new(i+1, 0, STAGE_SEMATIC_PARSING, "sematic rule file parser err: node rule before node"));
                 continue;
             }
         }else {
-            println!("sematic file parse err: invalid line {}",i);
+            diagnosis.push_err(CompgenError::new(i+1, 0, STAGE_SEMATIC_PARSING, "sematic file parse err: invalid line"));
         }
     }
     // store last pass
@@ -204,9 +222,10 @@ pub fn parse_sematic_rules(path:&str, ruleset:&Vec<ParserRuleSet>)->Vec<SematicP
             }
         }
     }
-    passes
+    if diagnosis.is_empty() { Ok(passes) } else { Err(diagnosis) }
 }
-pub fn generate_sematic_code(passes:&Vec<SematicPass>,ruleset:&Vec<ParserRuleSet>)->Option<String>{
+pub fn generate_sematic_code(passes:&Vec<SematicPass>,ruleset:&Vec<ParserRuleSet>)->Result<String,Diagnosis>{
+    let mut diagnosis=Diagnosis::new();
     let mut src=String::new();
     // collect checker funcs
     let checkers={
@@ -309,24 +328,33 @@ bool (*passes[])(ast_node_t*,sematic_context_t*)={{
     {}
 }};",passes.iter().map(|p| format!("{}_check",p.name)).collect::<Vec<String>>().join(",\n\t")));
     // read template
-    let template_code=read_from_file("sematic_template.cpp").expect("failed to read sematic_template.cpp");
+    let template_code=match read_from_file("sematic_template.cpp") {
+        Ok(code) => code,
+        Err(_) => {
+            diagnosis.push_err(CompgenError::new(0, 0, STAGE_SEMATIC_CODEGEN, "failed to read sematic_template.cpp"));
+            return Err(diagnosis);
+        }
+    };
     let final_code=template_code.replace("{%}", &src);
     if cfg!(feature="debug") {
         // put them in a separate file for users to fill them without getting replaced
-        write_to_file("sematic_test_user.cpp",&user_fill_template_src).expect("failed to write sematic_test_user.cpp");
-
-        write_to_file("sematic_test.cpp",&final_code).expect("failed to write sematic_test.cpp");
+        if write_to_file("sematic_test_user.cpp",&user_fill_template_src).is_err() {
+            diagnosis.push_err(CompgenError::new(0, 0, STAGE_SEMATIC_CODEGEN, "failed to write sematic_test_user.cpp"));
+        }
+        if write_to_file("sematic_test.cpp",&final_code).is_err() {
+            diagnosis.push_err(CompgenError::new(0, 0, STAGE_SEMATIC_CODEGEN, "failed to write sematic_test.cpp"));
+        }
     }
-    Some(final_code)
+    if diagnosis.is_empty() { Ok(final_code) } else { Err(diagnosis) }
 }
 #[test]
 fn test_parser_sematic_rules(){
-    let ruleset=parse_parser_rules("parser.rule");
-    parse_sematic_rules("sematic.rule", &ruleset);
+    let ruleset=parse_parser_rules("parser.rule").unwrap();
+    parse_sematic_rules("sematic.rule", &ruleset).unwrap();
 }
 #[test]
 fn test_generate_sematic_source() {
-    let ruleset=parse_parser_rules("parser.rule");
-    let passes=parse_sematic_rules("sematic.rule", &ruleset);
+    let ruleset=parse_parser_rules("parser.rule").unwrap();
+    let passes=parse_sematic_rules("sematic.rule", &ruleset).unwrap();
     let _ = generate_sematic_code(&passes,&ruleset);
 }

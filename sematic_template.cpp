@@ -28,5 +28,7 @@ bool do_sematic(const std::vector<ast_node_t*>& ast, sematic_context_t& context)
 
 bool do_sematic(const std::vector<ast_node_t*>& ast){
     sematic_context_t context;
+    // create global symbol table
+    context.push_symbol_table(nullptr);
     return do_sematic(ast, context);
 }

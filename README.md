@@ -1,5 +1,5 @@
-# Compiler Generator
-Generates C source files of a compiler according to the rules defined in the files.
+# XCFG - Xexux's Compiler Frontend Generator
+XCFG (Xexux's Compiler Frontend Generator) generates C++ source files of a compiler according to the rules defined in the files. The generated compiler takes in sources and outputs QBE IR.
 
 ## Rule File Format
 

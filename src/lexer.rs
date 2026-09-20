@@ -1,7 +1,7 @@
-use std::{eprintln, format, fs::{File, OpenOptions}, io::{Read, Write}, println};
+use std::{format, fs::{File, OpenOptions}, io::{Read, Write}, println};
 use regex;
 
-use crate::lexer;
+use crate::{CompgenError, Diagnosis, STAGE_LEXER_CODEGEN, STAGE_LEXER_PARSING, lexer};
 
 #[derive(Clone, Debug)]
 pub struct LexerRule{
@@ -27,12 +27,18 @@ pub enum LexerCategory{
         refed_rules:Vec<String>,
     }
 }
-
-pub fn parse_lexer_rules(path:&str)->Option<Vec<LexerCategory>>{
-    let mut lexer_file = OpenOptions::new().read(true).open(path).expect("failed to open lexer file");
+pub fn parse_lexer_rules(path:&str)->Result<Vec<LexerCategory>,Diagnosis>{
+    let mut diagnosis=Diagnosis::new();
+    let Ok(mut lexer_file) = OpenOptions::new().read(true).open(path) else {
+        diagnosis.push_err(CompgenError::new(0, 0, STAGE_LEXER_PARSING, "failed to open lexer file"));
+        return Err(diagnosis);
+    };
 
     let mut lexer_file_text=String::new();
-    lexer_file.read_to_string(&mut lexer_file_text).expect("failed to read lexer file");
+    let Ok(_) = lexer_file.read_to_string(&mut lexer_file_text) else {
+        diagnosis.push_err(CompgenError::new(0, 0, STAGE_LEXER_PARSING, "failed to read lexer file"));
+        return Err(diagnosis);
+    };
     
     let lexer_lines=lexer_file_text.split("\n").collect::<Vec<&str>>();
 
@@ -48,14 +54,14 @@ pub fn parse_lexer_rules(path:&str)->Option<Vec<LexerCategory>>{
             
             // test compile the pattern
             if regex::Regex::new(pat).is_err(){
-                eprintln!("lexer rule file parsing err: failed to compile regex at line {}",i+1);
+                diagnosis.push_err(CompgenError::new(i+1,0,STAGE_LEXER_PARSING,"failed to compile regex"));
                 continue;
             }
             let one_rule=LexerRule::new(name, pat);
             
             let category_num=lexer_categories.len();
             if category_num==0 {
-                eprintln!("lexer rule file parsing err: rule defined before category definition");
+                diagnosis.push_err(CompgenError::new(i+1, 0, STAGE_LEXER_PARSING, "lexer rule file parsing err: rule defined before category definition"));
                 continue;
             }
             if let Some(current_cat) = lexer_categories.get_mut(category_num-1) {
@@ -67,14 +73,14 @@ pub fn parse_lexer_rules(path:&str)->Option<Vec<LexerCategory>>{
                     LexerCategory::LexerRuleCategory { name, rules }=>{
                         // check if this pattern matches empty string, which is not allowed
                         if regex::Regex::new(pat).unwrap().find("").map_or(false, |m| m.start()==0 && m.end()==0) {
-                            eprintln!("lexer rule file parsing err at line {}: empty regex string or regex string that can match empty string",i+1);
+                            diagnosis.push_err(CompgenError::new(i+1, 0, STAGE_LEXER_PARSING, "lexer rule file parsing err: empty regex string or regex string that can match empty string"));
                             continue;
                         }
                         rules.push(one_rule);
                     }
                 }
             }else {
-                eprintln!("lexer rule file parsing err: rule defined before category definition");
+                diagnosis.push_err(CompgenError::new(i+1, 0, STAGE_LEXER_PARSING, "lexer rule file parsing err: rule defined before category definition"));
                 continue;
             }
 
@@ -89,7 +95,7 @@ pub fn parse_lexer_rules(path:&str)->Option<Vec<LexerCategory>>{
             let cat=LexerCategory::LexerRefCategory { name: cat_name.to_string(), refed_rules: vec![] };
             lexer_categories.push(cat);
         }else {
-            eprintln!("lexer rule file parsing err: failed to parse lexer rule at line {}",i+1);
+            diagnosis.push_err(CompgenError::new(i+1, 0, STAGE_LEXER_PARSING, "lexer rule file parsing err: failed to parse lexer rule"));
             continue;
         }
     }
@@ -111,10 +117,11 @@ pub fn parse_lexer_rules(path:&str)->Option<Vec<LexerCategory>>{
             }
         });
     }
-    Some(lexer_categories)
+    if diagnosis.is_empty() { Ok(lexer_categories) } else { Err(diagnosis) }
 }
 
-pub fn generate_lexer_source(lexer_cats:Vec<LexerCategory>)->String{
+pub fn generate_lexer_source(lexer_cats:Vec<LexerCategory>)->Result<String,Diagnosis>{
+    let mut diagnosis=Diagnosis::new();
     let mut src=String::from("
     ");
     /*
@@ -177,16 +184,31 @@ typedef enum{{
         cat_check_macros.push_str(&cat_str);
     }
     // put the token_type enum definition to the header file
-    let mut lexer_header_reader=File::open("lexer_template.h").expect("failed to open lexer header template file");
+    let Ok(mut lexer_header_reader)=File::open("lexer_template.h")else{
+        diagnosis.push_err(CompgenError::new(0, 0, STAGE_LEXER_CODEGEN, "failed to open lexer header template file"));
+        return Err(diagnosis);
+    };
     let mut lexer_header_code=String::new();
-    lexer_header_reader.read_to_string(&mut lexer_header_code).expect("failed to read lexer header template file");
+    let Ok(_)=lexer_header_reader.read_to_string(&mut lexer_header_code) else{
+        diagnosis.push_err(CompgenError::new(0, 0, STAGE_LEXER_CODEGEN, "failed to read lexer header template file"));
+        return Err(diagnosis);
+    };
     // merge strs
     let mut temp_str_merge=token_type_enum.clone();
     temp_str_merge.push_str(&cat_check_macros);
     lexer_header_code=lexer_header_code.replace("{%}", &temp_str_merge);
     // generate header file 
-    let mut lexer_header_gen = File::create("lexer.h").expect("failed to create or open lexer.h");
-    lexer_header_gen.write_all(&lexer_header_code.into_bytes()).expect("failed to write to lexer.h");
+    let mut lexer_header_gen = match File::create("lexer.h") {
+        Ok(file) => file,
+        Err(_) => {
+            diagnosis.push_err(CompgenError::new(0, 0, STAGE_LEXER_CODEGEN, "failed to create or open lexer.h"));
+            return Err(diagnosis);
+        }
+    };
+    if lexer_header_gen.write_all(lexer_header_code.as_bytes()).is_err() {
+        diagnosis.push_err(CompgenError::new(0, 0, STAGE_LEXER_CODEGEN, "failed to write to lexer.h"));
+        return Err(diagnosis);
+    }
     
     // define rule array
     let mut rules_array=String::new();
@@ -196,7 +218,7 @@ typedef enum{{
             LexerCategory::LexerRuleCategory { name, rules }=>{
                 for rule in rules.iter() {
                     let dealt_pat=rule.pattern_str.replace("\\", "\\\\").replace("\"", "\\\"").replace("\'", "\\\'");
-                    rules_array.push_str(&format!("{{.name=(const char*)\"{}\",.pattern=(const char*)\"{}\",.tok_type=TOKEN_{}}},\n",rule.name,dealt_pat,rule.name.to_uppercase()));
+                    rules_array.push_str(&format!("{{\"{}\", \"{}\", TOKEN_{}}},\n",rule.name,dealt_pat,rule.name.to_uppercase()));
                     rules_num+=1;
                 }
             },
@@ -211,20 +233,38 @@ lexer_rule_t lexer_rules[]={{
 ",rules_num,rules_array);
     src.push_str(&rules_array);
 
-    let mut template_file=OpenOptions::new().read(true).open("lexer_template.cpp").expect("failed to open lexer template file");
+    let mut template_file=match OpenOptions::new().read(true).open("lexer_template.cpp") {
+        Ok(file) => file,
+        Err(_) => {
+            diagnosis.push_err(CompgenError::new(0, 0, STAGE_LEXER_CODEGEN, "failed to open lexer template file"));
+            return Err(diagnosis);
+        }
+    };
     let mut template_str=String::new();
-    template_file.read_to_string(&mut template_str).expect("failed to read lexer template file");
+    if template_file.read_to_string(&mut template_str).is_err() {
+        diagnosis.push_err(CompgenError::new(0, 0, STAGE_LEXER_CODEGEN, "failed to read lexer template file"));
+        return Err(diagnosis);
+    }
     src = template_str.replace("{%}", &src);
 
     if cfg!(feature="debug") {
         println!("{}",src);
-        let mut lexer_output_file=OpenOptions::new().create(true).write(true).truncate(true).open("lexer_test.cpp").unwrap();
-        lexer_output_file.write_all(&src.as_bytes()).unwrap();
+        match OpenOptions::new().create(true).write(true).truncate(true).open("lexer_test.cpp") {
+            Ok(mut file) => {
+                if file.write_all(src.as_bytes()).is_err() {
+                    diagnosis.push_err(CompgenError::new(0, 0, STAGE_LEXER_CODEGEN, "failed to write lexer_test.cpp"));
+                }
+            }
+            Err(_) => diagnosis.push_err(CompgenError::new(0, 0, STAGE_LEXER_CODEGEN, "failed to create lexer_test.cpp")),
+        }
     }
-    src
+    if diagnosis.is_empty() { Ok(src) } else { Err(diagnosis) }
 }
 #[test]
 fn test_generate_lexer_source(){
     let lexer_rules = parse_lexer_rules("lexer.rule").unwrap();
-    generate_lexer_source(lexer_rules);
+    generate_lexer_source(lexer_rules).unwrap_or_else(|d| {
+        print!("{}",d.errs_str());
+        String::new()
+    });
 }

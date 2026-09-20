@@ -14,8 +14,9 @@ token_t* parse_token(tokenstream_t *tokenstream, token_type_t token_type){
     return NULL;
 }
 {%}
-std::vector<ast_node_t*> do_parse(tokenstream_t *tokenstream){
+parser_result_t do_parse(tokenstream_t *tokenstream){
     std::vector<ast_node_t*> nodes;
+    bool success=true;
     while(!tokenstream->eof()){
         bool flag=false;
         for(int i=0;i<sizeof(parser_rules)/sizeof(parser_rule_t);i++){
@@ -27,11 +28,12 @@ std::vector<ast_node_t*> do_parse(tokenstream_t *tokenstream){
             }
         }
         if(!flag){
+            success=false;
             printf("parser error: failed to parse token at line %d, column %d\n",tokenstream->peek()->line+1,tokenstream->peek()->column+1);
             tokenstream->begin_parsing();
             tokenstream->next();
             tokenstream->end_parsing();
         }
     }
-    return nodes;
+    return parser_result_t{success, nodes};
 }

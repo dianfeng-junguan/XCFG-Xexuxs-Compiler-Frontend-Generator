@@ -1,5 +1,7 @@
 #pragma once
+#include <algorithm>
 #include <cassert>
+#include <memory>
 #include <vector>
 #include <string>
 {%}
@@ -16,12 +18,16 @@ typedef struct _token_t{
 }token_t;
 class tokenstream_t{
     public:
-        tokenstream_t(std::vector<token_t> tokens):tokens(tokens),ptrs(1, 0){}
+        tokenstream_t(std::vector<token_t> tokens):ptrs(1, 0){
+            for(auto &tok:tokens){
+                this->tokens.push_back(std::make_unique<token_t>(tok));
+            }
+        }
         token_t *peek(){
             if(ptrs.back()>=tokens.size()){
                 return NULL;
             }
-            return &tokens[ptrs.back()];
+            return tokens[ptrs.back()].get();
         }
         void next(){
             assert(ptrs.size()>0);
@@ -44,13 +50,17 @@ class tokenstream_t{
             if(ptrs.back()>=tokens.size()){
                 return NULL;
             }
-            token_t *token=&tokens[ptrs.back()++];
+            token_t *token=tokens[ptrs.back()++].get();
             return token;
         }
         bool eof(){
             return ptrs.back()>=tokens.size();
         }
     private:
-        std::vector<token_t> tokens;
+        std::vector<std::unique_ptr<token_t>> tokens;
         std::vector<long> ptrs;
 };
+typedef struct{
+    bool success;
+    tokenstream_t tokenstream;
+}lexer_result_t;

@@ -1,33 +1,39 @@
 #include "parser.h"
 #include "sematic.h"
-bool predeclare_function(ast_node_t*,token_t*,arglist_t*,func_returntype_t*,sematic_context_t*){
+bool predeclare_function(ast_node_t*,token_t*,parameter_list_t*,func_returntype_t*,sematic_context_t*){
 	return true;
 }
 bool predeclare_struct(ast_node_t*,token_t*,sematic_context_t*){
 	return true;
 }
-bool enter_function_scope(ast_node_t*,sematic_context_t*){
+bool create_function_scope(ast_node_t*,sematic_context_t*){
 	return true;
 }
-bool predeclare_parameters(ast_node_t*,arglist_t*,sematic_context_t*){
+bool predeclare_parameters(ast_node_t*,parameter_list_t*,sematic_context_t*){
 	return true;
 }
 bool leave_scope(ast_node_t*,sematic_context_t*){
 	return true;
 }
-bool enter_struct_scope(ast_node_t*,sematic_context_t*){
+bool create_struct_scope(ast_node_t*,sematic_context_t*){
 	return true;
 }
 bool predeclare_members(ast_node_t*,structmembers_t*,sematic_context_t*){
 	return true;
 }
-bool enter_block_scope(ast_node_t*,sematic_context_t*){
+bool create_block_scope(ast_node_t*,sematic_context_t*){
 	return true;
 }
-bool enter_loop_scope(ast_node_t*,sematic_context_t*){
+bool create_loop_scope(ast_node_t*,sematic_context_t*){
 	return true;
 }
-bool declare_parameters(ast_node_t*,arglist_t*,sematic_context_t*){
+bool enter_function_scope(ast_node_t*,sematic_context_t*){
+	return true;
+}
+bool declare_parameters(ast_node_t*,parameter_list_t*,sematic_context_t*){
+	return true;
+}
+bool enter_struct_scope(ast_node_t*,sematic_context_t*){
 	return true;
 }
 bool declare_members(ast_node_t*,structmembers_t*,sematic_context_t*){
@@ -42,28 +48,31 @@ bool declare_inferred_variable(ast_node_t*,token_t*,ultimate_expr_t*,sematic_con
 bool declare_variable(ast_node_t*,token_t*,sematic_context_t*){
 	return true;
 }
-bool resolve_function_signature(ast_node_t*,token_t*,arglist_t*,func_returntype_t*,sematic_context_t*){
+bool resolve_function_signature(ast_node_t*,token_t*,parameter_list_t*,func_returntype_t*,sematic_context_t*){
 	return true;
 }
 bool resolve_struct_signature(ast_node_t*,token_t*,structmembers_t*,sematic_context_t*){
 	return true;
 }
-bool resolve_symbol(ast_node_t*,token_t*,sematic_context_t*){
+bool resolve_arguments(ast_node_t*,argument_list_t*,sematic_context_t*){
 	return true;
 }
 bool resolve_member(ast_node_t*,lvalue_t*,token_t*,sematic_context_t*){
 	return true;
 }
-bool resolve_arguments(ast_node_t*,arglist_t*,sematic_context_t*){
+bool resolve_symbol(ast_node_t*,token_t*,sematic_context_t*){
 	return true;
 }
-bool resolve_member(ast_node_t*,lvalue_noproperty_t*,token_t*,sematic_context_t*){
+bool enter_block_scope(ast_node_t*,sematic_context_t*){
+	return true;
+}
+bool enter_loop_scope(ast_node_t*,sematic_context_t*){
 	return true;
 }
 bool enter_function_context(ast_node_t*,token_t*,func_returntype_t*,sematic_context_t*){
 	return true;
 }
-bool check_function_type(ast_node_t*,arglist_t*,func_returntype_t*,sematic_context_t*){
+bool check_function_type(ast_node_t*,parameter_list_t*,func_returntype_t*,sematic_context_t*){
 	return true;
 }
 bool leave_function_context(ast_node_t*,sematic_context_t*){
@@ -126,82 +135,91 @@ bool check_shiftleftable(ast_node_t*,lvalue_t*,assign_expr_t*,sematic_context_t*
 bool check_shiftrightable(ast_node_t*,lvalue_t*,assign_expr_t*,sematic_context_t*){
 	return true;
 }
-bool propagate_type(ast_node_t*,logic_expr_eq_t*,sematic_context_t*){
+bool propagate_type(ast_node_t*,logic_expr_or_t*,sematic_context_t*){
 	return true;
 }
-bool check_equalable(ast_node_t*,logic_expr_or_t*,logic_expr_eq_t*,sematic_context_t*){
+bool check_equalable(ast_node_t*,logic_expr_eq_t*,bitor_expr_t*,sematic_context_t*){
 	return true;
 }
 bool set_boolean_type(ast_node_t*,sematic_context_t*){
 	return true;
 }
-bool check_nequalable(ast_node_t*,logic_expr_or_t*,logic_expr_eq_t*,sematic_context_t*){
+bool check_nequalable(ast_node_t*,logic_expr_eq_t*,bitor_expr_t*,sematic_context_t*){
 	return true;
 }
-bool check_comparable(ast_node_t*,logic_expr_or_t*,logic_expr_eq_t*,sematic_context_t*){
-	return true;
-}
-bool require_boolean(ast_node_t*,logic_expr_and_t*,sematic_context_t*){
+bool check_comparable(ast_node_t*,logic_expr_eq_t*,bitor_expr_t*,sematic_context_t*){
 	return true;
 }
 bool require_boolean(ast_node_t*,logic_expr_or_t*,sematic_context_t*){
 	return true;
 }
-bool require_boolean(ast_node_t*,expr_t*,sematic_context_t*){
+bool require_boolean(ast_node_t*,logic_expr_and_t*,sematic_context_t*){
 	return true;
 }
-bool propagate_type(ast_node_t*,expr_t*,sematic_context_t*){
+bool require_boolean(ast_node_t*,logic_expr_eq_t*,sematic_context_t*){
+	return true;
+}
+bool propagate_type(ast_node_t*,logic_expr_eq_t*,sematic_context_t*){
 	return true;
 }
 bool propagate_type(ast_node_t*,logic_expr_and_t*,sematic_context_t*){
 	return true;
 }
-bool propagate_type(ast_node_t*,logic_expr_or_t*,sematic_context_t*){
+bool propagate_type(ast_node_t*,bitor_expr_t*,sematic_context_t*){
 	return true;
 }
-bool check_addable(ast_node_t*,term_t*,expr_t*,sematic_context_t*){
+bool check_addable(ast_node_t*,expr_t*,term_t*,sematic_context_t*){
 	return true;
 }
-bool infer_binary_result_type(ast_node_t*,term_t*,expr_t*,sematic_context_t*){
+bool infer_binary_result_type(ast_node_t*,expr_t*,term_t*,sematic_context_t*){
 	return true;
 }
-bool check_minusable(ast_node_t*,term_t*,expr_t*,sematic_context_t*){
+bool check_minusable(ast_node_t*,expr_t*,term_t*,sematic_context_t*){
 	return true;
 }
-bool check_mulable(ast_node_t*,power_factor_t*,term_t*,sematic_context_t*){
+bool check_mulable(ast_node_t*,term_t*,power_factor_t*,sematic_context_t*){
 	return true;
 }
-bool infer_binary_result_type(ast_node_t*,power_factor_t*,term_t*,sematic_context_t*){
+bool infer_binary_result_type(ast_node_t*,term_t*,power_factor_t*,sematic_context_t*){
 	return true;
 }
-bool check_divable(ast_node_t*,power_factor_t*,term_t*,sematic_context_t*){
+bool check_divable(ast_node_t*,term_t*,power_factor_t*,sematic_context_t*){
 	return true;
 }
-bool check_modable(ast_node_t*,power_factor_t*,term_t*,sematic_context_t*){
+bool check_modable(ast_node_t*,term_t*,power_factor_t*,sematic_context_t*){
 	return true;
 }
-bool check_bitandable(ast_node_t*,power_factor_t*,term_t*,sematic_context_t*){
+bool check_bitandable(ast_node_t*,bitand_expr_t*,shift_expr_t*,sematic_context_t*){
 	return true;
 }
-bool check_bitorable(ast_node_t*,power_factor_t*,term_t*,sematic_context_t*){
+bool infer_binary_result_type(ast_node_t*,bitand_expr_t*,shift_expr_t*,sematic_context_t*){
 	return true;
 }
-bool check_shiftleftable(ast_node_t*,power_factor_t*,term_t*,sematic_context_t*){
+bool check_bitorable(ast_node_t*,bitor_expr_t*,bitand_expr_t*,sematic_context_t*){
 	return true;
 }
-bool check_shiftrightable(ast_node_t*,power_factor_t*,term_t*,sematic_context_t*){
+bool infer_binary_result_type(ast_node_t*,bitor_expr_t*,bitand_expr_t*,sematic_context_t*){
+	return true;
+}
+bool check_shiftleftable(ast_node_t*,shift_expr_t*,expr_t*,sematic_context_t*){
+	return true;
+}
+bool infer_binary_result_type(ast_node_t*,shift_expr_t*,expr_t*,sematic_context_t*){
+	return true;
+}
+bool check_shiftrightable(ast_node_t*,shift_expr_t*,expr_t*,sematic_context_t*){
 	return true;
 }
 bool propagate_type(ast_node_t*,power_factor_t*,sematic_context_t*){
 	return true;
 }
-bool require_numeric(ast_node_t*,single_op_factor_t*,sematic_context_t*){
-	return true;
-}
 bool require_numeric(ast_node_t*,power_factor_t*,sematic_context_t*){
 	return true;
 }
-bool infer_binary_result_type(ast_node_t*,single_op_factor_t*,power_factor_t*,sematic_context_t*){
+bool require_numeric(ast_node_t*,single_op_factor_t*,sematic_context_t*){
+	return true;
+}
+bool infer_binary_result_type(ast_node_t*,power_factor_t*,single_op_factor_t*,sematic_context_t*){
 	return true;
 }
 bool propagate_type(ast_node_t*,single_op_factor_t*,sematic_context_t*){
@@ -243,10 +261,10 @@ bool propagate_type(ast_node_t*,lvalue_noproperty_t*,sematic_context_t*){
 bool require_callable(ast_node_t*,lvalue_t*,sematic_context_t*){
 	return true;
 }
-bool check_argument_count(ast_node_t*,lvalue_t*,arglist_t*,sematic_context_t*){
+bool check_argument_count(ast_node_t*,lvalue_t*,argument_list_t*,sematic_context_t*){
 	return true;
 }
-bool check_argument_types(ast_node_t*,lvalue_t*,arglist_t*,sematic_context_t*){
+bool check_argument_types(ast_node_t*,lvalue_t*,argument_list_t*,sematic_context_t*){
 	return true;
 }
 bool infer_call_result_type(ast_node_t*,lvalue_t*,sematic_context_t*){
@@ -256,12 +274,6 @@ bool check_member_access(ast_node_t*,lvalue_t*,token_t*,sematic_context_t*){
 	return true;
 }
 bool propagate_member_type(ast_node_t*,lvalue_t*,token_t*,sematic_context_t*){
-	return true;
-}
-bool check_member_access(ast_node_t*,lvalue_noproperty_t*,token_t*,sematic_context_t*){
-	return true;
-}
-bool propagate_member_type(ast_node_t*,lvalue_noproperty_t*,token_t*,sematic_context_t*){
 	return true;
 }
 bool set_number_type(ast_node_t*,token_t*,sematic_context_t*){
@@ -277,6 +289,15 @@ bool propagate_type(ast_node_t*,factor_t*,sematic_context_t*){
 	return true;
 }
 bool propagate_type(ast_node_t*,term_t*,sematic_context_t*){
+	return true;
+}
+bool propagate_type(ast_node_t*,expr_t*,sematic_context_t*){
+	return true;
+}
+bool propagate_type(ast_node_t*,shift_expr_t*,sematic_context_t*){
+	return true;
+}
+bool propagate_type(ast_node_t*,bitand_expr_t*,sematic_context_t*){
 	return true;
 }
 bool propagate_type(ast_node_t*,glued_factor_t*,sematic_context_t*){
@@ -318,7 +339,7 @@ bool require_boolean(ast_node_t*,ultimate_expr_t*,sematic_context_t*){
 bool begin_definite_function(ast_node_t*,sematic_context_t*){
 	return true;
 }
-bool mark_parameters_initialized(ast_node_t*,arglist_t*,sematic_context_t*){
+bool mark_parameters_initialized(ast_node_t*,parameter_list_t*,sematic_context_t*){
 	return true;
 }
 bool end_definite_function(ast_node_t*,sematic_context_t*){
@@ -411,10 +432,13 @@ bool propagate_flow(ast_node_t*,while_t*,sematic_context_t*){
 bool propagate_flow(ast_node_t*,statement_t*,sematic_context_t*){
 	return true;
 }
-bool check_unreachable(ast_node_t*,statement_t*,statements_t*,sematic_context_t*){
+bool check_unreachable(ast_node_t*,statement_t*,statements_nonempty_t*,sematic_context_t*){
 	return true;
 }
-bool combine_sequential_flow(ast_node_t*,statement_t*,statements_t*,sematic_context_t*){
+bool combine_sequential_flow(ast_node_t*,statement_t*,statements_nonempty_t*,sematic_context_t*){
+	return true;
+}
+bool propagate_flow(ast_node_t*,statements_nonempty_t*,sematic_context_t*){
 	return true;
 }
 bool propagate_flow(ast_node_t*,statements_t*,sematic_context_t*){

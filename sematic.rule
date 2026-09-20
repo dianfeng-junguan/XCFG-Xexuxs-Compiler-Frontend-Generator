@@ -5,30 +5,30 @@ declaration.struct:
     predeclare_struct(name)
 function.default:
     predeclare_function(name,args,return_type)
-    enter_function_scope()
+    create_function_scope()
     predeclare_parameters(args)
     visit(stmts)
     leave_scope()
 struct.default:
     predeclare_struct(name)
-    enter_struct_scope()
+    create_struct_scope()
     predeclare_members(members)
     leave_scope()
 if.default:
-    enter_block_scope()
+    create_block_scope()
     visit(statements)
     leave_scope()
     visit(rest_block)
 while.default:
-    enter_loop_scope()
+    create_loop_scope()
     visit(statements)
     leave_scope()
 else.default:
-    enter_block_scope()
+    create_block_scope()
     visit(statements)
     leave_scope()
 elseif.default:
-    enter_block_scope()
+    create_block_scope()
     visit(statements)
     leave_scope()
 
@@ -63,11 +63,8 @@ declaration.fn:
 declaration.struct:
     visit(members)
     resolve_struct_signature(name,members)
-factor.id:
-    resolve_symbol(value)
-glued_factor.def:
-    visit(left)
-    resolve_member(left,right)
+glued_factor.lvalue:
+    visit(value)
 glued_factor.call:
     visit(left)
     visit(args)
@@ -139,10 +136,10 @@ declaration.fn:
     check_function_type(args,return_type)
 declaration.struct:
     visit(members)
-arglist_nonempty.singarg:
+parameter_list_nonempty.singarg:
     visit(arg_type)
     require_valid_parameter_type(arg_type)
-arglist_nonempty.multiarg:
+parameter_list_nonempty.multiarg:
     visit(arg_type)
     require_valid_parameter_type(arg_type)
     visit(other_args)
@@ -292,22 +289,22 @@ term.mod:
     visit(right)
     check_modable(left,right)
     infer_binary_result_type(left,right)
-term.bitand:
+bitand_expr.bitand:
     visit(left)
     visit(right)
     check_bitandable(left,right)
     infer_binary_result_type(left,right)
-term.bitor:
+bitor_expr.bitor:
     visit(left)
     visit(right)
     check_bitorable(left,right)
     infer_binary_result_type(left,right)
-term.shiftleft:
+shift_expr.shiftleft:
     visit(left)
     visit(right)
     check_shiftleftable(left,right)
     infer_binary_result_type(left,right)
-term.shiftright:
+shift_expr.shiftright:
     visit(left)
     visit(right)
     check_shiftrightable(left,right)
@@ -361,16 +358,13 @@ glued_factor.call:
     check_argument_count(left,args)
     check_argument_types(left,args)
     infer_call_result_type(left)
-glued_factor.def:
-    visit(left)
-    check_member_access(left,right)
-    propagate_member_type(left,right)
+glued_factor.lvalue:
+    visit(value)
+    propagate_type(value)
 lvalue.prop:
     visit(left)
     check_member_access(left,right)
     propagate_member_type(left,right)
-factor.id:
-    propagate_symbol_type(value)
 factor.num:
     set_number_type(value)
 factor.ch:
@@ -384,6 +378,15 @@ glued_factor.paren:
     visit(expr)
     propagate_type(expr)
 expr.term:
+    visit(expr)
+    propagate_type(expr)
+shift_expr.expr:
+    visit(expr)
+    propagate_type(expr)
+bitand_expr.shift:
+    visit(expr)
+    propagate_type(expr)
+bitor_expr.bitand:
     visit(expr)
     propagate_type(expr)
 power_factor.none:
@@ -514,8 +517,6 @@ lvalue_noproperty.deref:
     push_read_access()
     visit(derefee)
     pop_access_mode()
-factor.id:
-    require_initialized_if_read(value)
 lvalue_noproperty.id:
     require_initialized_if_read(id)
 logic_expr_and.and:
@@ -601,14 +602,17 @@ statement.if:
 statement.while:
     visit(while_stmt)
     propagate_flow(while_stmt)
-statements.stmt:
+statements_nonempty.stmt:
     visit(stmt)
     propagate_flow(stmt)
-statements.multistmt:
+statements_nonempty.multistmt:
     visit(stmt)
     visit(other_stmts)
     check_unreachable(stmt,other_stmts)
     combine_sequential_flow(stmt,other_stmts)
+statements.hasstatements:
+    visit(statements)
+    propagate_flow(statements)
 statements.empty:
     set_fallthrough_flow()
 else.default:

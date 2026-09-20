@@ -1,4 +1,6 @@
-use std::{cmp, collections::HashMap, eprintln, fmt::{Display, Pointer, format}, format, fs::File, hash::Hash, io::{Read, Write}, println, vec, write};
+use std::{cmp, collections::HashMap, fmt::{Display, Pointer, format}, format, fs::File, hash::Hash, io::{Read, Write}, println, vec, write};
+
+use crate::{CompgenError, Diagnosis, STAGE_PARSER_CODEGEN};
 
 #[derive(PartialEq, Eq)]
 pub enum TermType{
@@ -92,7 +94,7 @@ impl ParserRule {
         let mut member_disposal_str=String::new();
         let member_str=self.struct_members.iter().map(|m| {
             match m.member_type {
-                NodeMemberType::Token|NodeMemberType::TokenCategory=>format!("token_t *{}",m.name),
+                NodeMemberType::Token|NodeMemberType::TokenCategory=>format!("token_t *{}=nullptr",m.name),
                 NodeMemberType::Node=>{
                     // find the ruleset
                     let rs_name_target=&self.recipe[m.pos_in_recipe].value;
@@ -103,7 +105,7 @@ impl ParserRule {
                     member_disposal_str.push_str(&format!("delete {};\n",m.name));
                     // get the class name 
                     let rs_class_name=rs.get_class_name();
-                    format!("{}* {}",rs_class_name,m.name)
+                    format!("{}* {}=nullptr",rs_class_name,m.name)
                 }
             }
         }).collect::<Vec<String>>().join(";\n\t");
@@ -150,14 +152,14 @@ impl ParserRule {
                 TermType::SpecificTokenType=>{
                     // todo need to get token enum by looking up some table
                     if t.should_be_stored {
-                        format!("if(!(node->{}=parse_token(tokenstream,TOKEN_{}))){{tokenstream->reset();delete node;return nullptr;}}",t.to_store_in,t.value.to_uppercase())
+                        format!("if(!(node->{}=parse_token(tokenstream,TOKEN_{}))){{tokenstream->reset();delete node;return nullptr;}}else{{node->{}=new token_t(*node->{});}}",t.to_store_in,t.value.to_uppercase(),t.to_store_in,t.to_store_in)
                     }else {
                         format!("if(!(parse_token(tokenstream,TOKEN_{}))){{tokenstream->reset();delete node;return nullptr;}}",t.value.to_uppercase())
                     }
                 }
                 TermType::TokenCategory=>{
                     if t.should_be_stored {
-                        format!("if(!tokenstream->eof()&&BELONGS_TO_CATEGORY_{}(tokenstream->peek()->token_type)){{node->{}=tokenstream->consume();}}else{{tokenstream->reset();delete node;return nullptr;}}",t.value.to_uppercase(),t.to_store_in)
+                        format!("if(!tokenstream->eof()&&BELONGS_TO_CATEGORY_{}(tokenstream->peek()->token_type)){{node->{}=new token_t(*tokenstream->consume());}}else{{tokenstream->reset();delete node;return nullptr;}}",t.value.to_uppercase(),t.to_store_in)
                     }else {
                         format!("if(!tokenstream->eof()&&BELONGS_TO_CATEGORY_{}(tokenstream->peek()->token_type)){{tokenstream->consume();}}else{{tokenstream->reset();delete node;return nullptr;}}",t.value.to_uppercase())
                     }
@@ -177,8 +179,8 @@ impl ParserRule {
         String::from("{r}* parse_{r}_nostart({rs}_t* start_node,tokenstream_t *tokenstream){
     {r}* node=new {r}();
     tokenstream->begin_parsing();
-    {first_member}
     {}
+    {first_member}
     tokenstream->end_parsing();
     return node;
 }\n").replace("{r}", &self.get_class_name(ruleset_name)).replace("{first_member}", if self.recipe.get(0).unwrap().should_be_stored {
@@ -231,7 +233,7 @@ impl ParserRuleSet {
     fn gen_class_code(&self)->String {
         format!("class {}:public ast_node_t{{
     public:
-    virtual node_type_t get_kind() const override;
+    virtual node_type_t get_kind() const override=0;
     virtual ~{}() = default;
 }};",self.get_class_name(),self.get_class_name())
     }
@@ -338,10 +340,20 @@ impl Hash for ParserRuleSet {
 fn test_parse_parser_rules(){
     parse_parser_rules("parser.rule");
 }
-pub fn parse_parser_rules(path:&str)->Vec<ParserRuleSet>{
+pub fn parse_parser_rules(path:&str)->Result<Vec<ParserRuleSet>,Diagnosis>{
+    let mut diagnosis=Diagnosis::new();
     let mut rule_file_text=String::new();
-    let mut rule_file=File::open(path).unwrap();
-    rule_file.read_to_string(&mut rule_file_text).expect("failed to read lexer file");
+    let mut rule_file=match File::open(path) {
+        Ok(file) => file,
+        Err(_) => {
+            diagnosis.push_err(CompgenError::new(0, 0, crate::STAGE_PARSER_PARSING, "failed to open parser file"));
+            return Err(diagnosis);
+        }
+    };
+    if rule_file.read_to_string(&mut rule_file_text).is_err() {
+        diagnosis.push_err(CompgenError::new(0, 0, crate::STAGE_PARSER_PARSING, "failed to read parser file"));
+        return Err(diagnosis);
+    }
 
     let rule_lines=rule_file_text.split("\n").collect::<Vec<&str>>();
 
@@ -365,13 +377,13 @@ pub fn parse_parser_rules(path:&str)->Vec<ParserRuleSet>{
                 };
                 rulesets.push(set);
             }else {
-                eprintln!("parser generator err at line {}: invalid naming",i);
+                diagnosis.push_err(CompgenError::new(i+1, 0, crate::STAGE_PARSER_PARSING, "parser generator err: invalid naming"));
                 continue;
             }
         }else if rule_pat.is_match(line) {
             if let Some(cap) = rule_pat.captures(line) {
                 if cap.len()<3 {
-                    eprintln!("parser generator err at line {}: a rule needs to have at least a name and a structure", i);
+                    diagnosis.push_err(CompgenError::new(i+1, 0, crate::STAGE_PARSER_PARSING, "parser generator err: a rule needs to have at least a name and a structure"));
                     continue;
                 }
                 let name=cap.get(1).unwrap().as_str();
@@ -387,13 +399,16 @@ pub fn parse_parser_rules(path:&str)->Vec<ParserRuleSet>{
                         content[cap_start..cap_match.start()].chars().any(|c| !c.is_whitespace())  
                     } {
                         // there are some invalid chars in between
-                        eprintln!("parsergen err: invalid chars between col {} and col {}, line {}",cap_start,cap_match.start(),i+1);
+                        diagnosis.push_err(CompgenError::new(i+1, cap_start+1, crate::STAGE_PARSER_PARSING, &format!("parsergen err: invalid chars between col {} and col {}",cap_start,cap_match.start())));
                     }
                     if cap_match.as_str()=="!" {
                         // empty
                         break;
                     }
-                    let term=Term::from_fmt(cap_match.as_str()).expect(&format!("parser generator err at line {}: invalid term grammar",i));
+                    let Some(term)=Term::from_fmt(cap_match.as_str()) else {
+                        diagnosis.push_err(CompgenError::new(i+1, cap_start+1, crate::STAGE_PARSER_PARSING, "parser generator err: invalid term grammar"));
+                        break;
+                    };
                     if term.should_be_stored {
                         let node_member=NodeMember{
                             name: term.to_store_in.clone(),
@@ -412,11 +427,11 @@ pub fn parse_parser_rules(path:&str)->Vec<ParserRuleSet>{
                 }
                 let set_num=rulesets.len();
                 if set_num==0 {
-                    eprintln!("rule defined before ruleset defined");
+                    diagnosis.push_err(CompgenError::new(i+1, 0, crate::STAGE_PARSER_PARSING, "rule defined before ruleset defined"));
                     continue;
                 }
                 let Some(set)=rulesets.get_mut(set_num-1) else {
-                    eprintln!("rule defined before ruleset defined");
+                    diagnosis.push_err(CompgenError::new(i+1, 0, crate::STAGE_PARSER_PARSING, "rule defined before ruleset defined"));
                     continue;
                 };
                 // check if the value of the first term equals the ruleset
@@ -435,9 +450,11 @@ pub fn parse_parser_rules(path:&str)->Vec<ParserRuleSet>{
                 // add this rule to the set
                 set.rules.push(rule);
             }else {
-                eprintln!("parser generator err at line {}: failed to parse rule", i);
+                diagnosis.push_err(CompgenError::new(i+1, 0, crate::STAGE_PARSER_PARSING, "parser generator err: failed to parse rule"));
                 continue;
             }
+        }else {
+            diagnosis.push_err(CompgenError::new(i+1, 0, crate::STAGE_PARSER_PARSING, "parser generator err: failed to parse rule"));
         }
     }
 
@@ -445,16 +462,33 @@ pub fn parse_parser_rules(path:&str)->Vec<ParserRuleSet>{
         println!("parser:");
         rulesets.iter().for_each(|rs| println!("{}",rs));
     }
-    rulesets
+    if diagnosis.is_empty() { Ok(rulesets) } else { Err(diagnosis) }
 }
 
 #[test]
 fn test_generate_parser_source(){
-    let parser_rules=parse_parser_rules("parser.rule");
-    generate_parser_source(&parser_rules);
+    match parse_parser_rules("parser.rule"){
+        Ok(parser_rules)=>{
+            generate_parser_source(&parser_rules);
+        }
+        Err(d)=>{
+            d.print_errs();
+        }
+    }
 }
-pub fn generate_parser_source(ruleset:&Vec<ParserRuleSet>)->String{
+pub fn generate_parser_source(ruleset:&Vec<ParserRuleSet>)->Result<String,Diagnosis>{
+    let mut diagnosis=Diagnosis::new();
     let mut src=String::new();
+    for rs in ruleset {
+        for rule in &rs.rules {
+            for term in &rule.recipe {
+                if term.term_type == TermType::ParserRuleSet && !ruleset.iter().any(|target| target.name == term.value) {
+                    diagnosis.push_err(CompgenError::new(0, 0, crate::STAGE_PARSER_CODEGEN, &format!("rule {} referenced a non-existent ruleset {}", rule.name, term.value)));
+                }
+            }
+        }
+    }
+    if !diagnosis.is_empty() { return Err(diagnosis); }
     // vector of ruleset class name
     let mut ruleset_classdefs=Vec::new();
     let mut rule_classdefs=Vec::new();
@@ -487,7 +521,7 @@ pub fn generate_parser_source(ruleset:&Vec<ParserRuleSet>)->String{
 
     let rule_structdef_str=format!("
 typedef struct{{
-    char* name;
+    const char* name;
     ast_node_t* (*parser)(tokenstream_t *ts);
 }}parser_rule_t;
 ");
@@ -496,11 +530,11 @@ typedef struct{{
     // find the reserved top_statement ruleset as make it the top parser that calls all the other parsers 
     if let Some(top_stmt_ruleset) = ruleset.iter().find(|rs| rs.name=="top_statement"){
         rule_array_str.push_str(&format!(
-            "{{.name=\"{}\", .parser=(ast_node_t* (*)(tokenstream_t*))parse_{}}},\n",top_stmt_ruleset.name,top_stmt_ruleset.get_class_name()
+            "{{\"{}\", (ast_node_t* (*)(tokenstream_t*))parse_{}}},\n",top_stmt_ruleset.name,top_stmt_ruleset.get_class_name()
         ));
     }else {
-        eprintln!("parsergen err: cannot find necessary ruleset 'top_statement'");
-        return String::new();
+        diagnosis.push_err(CompgenError::new(0, 0, STAGE_PARSER_CODEGEN,"parsergen err: cannot find necessary ruleset 'top_statement'"));
+        return Err(diagnosis);
     }
     let rule_array_str=format!("
 parser_rule_t parser_rules[]={{
@@ -524,6 +558,10 @@ public:
     virtual ~ast_node_t() = default;
     virtual node_type_t get_kind() const = 0;
 };
+typedef struct{
+    bool success;
+    std::vector<ast_node_t*> ast;
+}parser_result_t;
 ");
     header_src.push_str(&ruleset_classdefs.join("\n"));
     header_src.push('\n');
@@ -538,18 +576,41 @@ public:
     src.push_str(&rule_array_str);
 
     // generate header file
-    let mut header_file=File::create("parser.h").expect("failed to create parser.h");
-    header_file.write_all(header_src.as_bytes()).expect("failed to write parser.h");
+    let mut header_file=match File::create("parser.h") {
+        Ok(file) => file,
+        Err(_) => {
+            diagnosis.push_err(CompgenError::new(0, 0, crate::STAGE_PARSER_CODEGEN, "failed to create parser.h"));
+            return Err(diagnosis);
+        }
+    };
+    if header_file.write_all(header_src.as_bytes()).is_err() {
+        diagnosis.push_err(CompgenError::new(0, 0, crate::STAGE_PARSER_CODEGEN, "failed to write parser.h"));
+        return Err(diagnosis);
+    }
     // put generated code into template
-    let mut template_reader=File::open("parser_template.cpp").expect("failed to read parser template file");
+    let mut template_reader=match File::open("parser_template.cpp") {
+        Ok(file) => file,
+        Err(_) => {
+            diagnosis.push_err(CompgenError::new(0, 0, crate::STAGE_PARSER_CODEGEN, "failed to read parser template file"));
+            return Err(diagnosis);
+        }
+    };
     let mut template_code=String::new();
-    template_reader.read_to_string(&mut template_code).expect("failed to read parser template file");
+    if template_reader.read_to_string(&mut template_code).is_err() {
+        diagnosis.push_err(CompgenError::new(0, 0, crate::STAGE_PARSER_CODEGEN, "failed to read parser template file"));
+        return Err(diagnosis);
+    }
     template_code=template_code.replace("{%}", &src);
     src=template_code;
     if cfg!(feature="debug") {
         // println!("{}",src);
-        let mut parser_output=File::create("parser_test.cpp").unwrap();
-        parser_output.write_all(src.as_bytes()).unwrap();
+        if let Ok(mut parser_output)=File::create("parser_test.cpp") {
+            if parser_output.write_all(src.as_bytes()).is_err() {
+                diagnosis.push_err(CompgenError::new(0, 0, crate::STAGE_PARSER_CODEGEN, "failed to write parser_test.cpp"));
+            }
+        } else {
+            diagnosis.push_err(CompgenError::new(0, 0, crate::STAGE_PARSER_CODEGEN, "failed to create parser_test.cpp"));
+        }
     }
-    src
+    if diagnosis.is_empty() { Ok(src) } else { Err(diagnosis) }
 }

@@ -1,5 +1,7 @@
 #pragma once
+#include <algorithm>
 #include <cassert>
+#include <memory>
 #include <vector>
 #include <string>
 
@@ -18,11 +20,13 @@ TOKEN_STRING_TYPEKW,
 TOKEN_CHAR_TYPEKW,
 TOKEN_VOID,
 TOKEN_STRUCT,
-TOKEN_NUMBER,
 TOKEN_FLOAT,
+TOKEN_NUMBER,
 TOKEN_STRING,
 TOKEN_CHAR,
 TOKEN_IDENTIFIER,
+TOKEN_LINE_COMMENT,
+TOKEN_BLOCK_COMMENT,
 TOKEN_ADDASSIGN,
 TOKEN_MINUSASSIGN,
 TOKEN_MULASSIGN,
@@ -63,8 +67,6 @@ TOKEN_OPENBRACKET,
 TOKEN_CLOSEDBRACKET,
 TOKEN_SEMICOLON,
 TOKEN_COLON,
-TOKEN_LINE_COMMENT,
-TOKEN_BLOCK_COMMENT,
 TOKEN_WHITESPACE,
 
 }token_type_t;
@@ -73,13 +75,15 @@ TOKEN_WHITESPACE,
         
 #define BELONGS_TO_CATEGORY_TYPEKW(toktype) (toktype==TOKEN_INT||toktype==TOKEN_STRING_TYPEKW||toktype==TOKEN_CHAR_TYPEKW||toktype==TOKEN_VOID||toktype==TOKEN_STRUCT)
         
-#define BELONGS_TO_CATEGORY_NUMBER(toktype) (toktype==TOKEN_NUMBER||toktype==TOKEN_FLOAT)
+#define BELONGS_TO_CATEGORY_NUMBER(toktype) (toktype==TOKEN_FLOAT||toktype==TOKEN_NUMBER)
         
 #define BELONGS_TO_CATEGORY_STRING(toktype) (toktype==TOKEN_STRING)
         
 #define BELONGS_TO_CATEGORY_CHAR(toktype) (toktype==TOKEN_CHAR)
         
 #define BELONGS_TO_CATEGORY_IDENTIFIER(toktype) (toktype==TOKEN_IDENTIFIER)
+        
+#define BELONGS_TO_CATEGORY_COMMENT(toktype) (toktype==TOKEN_LINE_COMMENT||toktype==TOKEN_BLOCK_COMMENT)
         
 #define BELONGS_TO_CATEGORY_OPERATOR(toktype) (toktype==TOKEN_ADDASSIGN||toktype==TOKEN_MINUSASSIGN||toktype==TOKEN_MULASSIGN||toktype==TOKEN_DIVASSIGN||toktype==TOKEN_MODASSIGN||toktype==TOKEN_BITANDASSIGN||toktype==TOKEN_BITORASSIGN||toktype==TOKEN_SHIFTLEFTASSIGN||toktype==TOKEN_SHIFTRIGHTASSIGN||toktype==TOKEN_GREATEREQUAL||toktype==TOKEN_LESSEQUAL||toktype==TOKEN_EQUAL||toktype==TOKEN_ASSIGN||toktype==TOKEN_UNEQUAL||toktype==TOKEN_SHIFTLEFT||toktype==TOKEN_SHIFTRIGHT||toktype==TOKEN_OR||toktype==TOKEN_GREATERTHAN||toktype==TOKEN_LESSTHAN||toktype==TOKEN_ADD||toktype==TOKEN_MINUS||toktype==TOKEN_STAR||toktype==TOKEN_SLASH||toktype==TOKEN_PERCENT||toktype==TOKEN_PROPERTY||toktype==TOKEN_OPENPAREN||toktype==TOKEN_CLOSEDPAREN||toktype==TOKEN_AND||toktype==TOKEN_NOT||toktype==TOKEN_BITAND||toktype==TOKEN_BITOR||toktype==TOKEN_BITNOT||toktype==TOKEN_BITXOR||toktype==TOKEN_COMMA||toktype==TOKEN_OPEN_SQUAREDBRACKET||toktype==TOKEN_CLOSED_SQUAREDBRACKET)
         
@@ -88,8 +92,6 @@ TOKEN_WHITESPACE,
 #define BELONGS_TO_CATEGORY_SINGLE_OPERATOR(toktype) (toktype==TOKEN_ADD||toktype==TOKEN_MINUS||toktype==TOKEN_STAR||toktype==TOKEN_NOT||toktype==TOKEN_BITNOT||toktype==TOKEN_BITAND)
         
 #define BELONGS_TO_CATEGORY_SEPARATOR(toktype) (toktype==TOKEN_OPENBRACKET||toktype==TOKEN_CLOSEDBRACKET||toktype==TOKEN_SEMICOLON||toktype==TOKEN_COLON)
-        
-#define BELONGS_TO_CATEGORY_COMMENT(toktype) (toktype==TOKEN_LINE_COMMENT||toktype==TOKEN_BLOCK_COMMENT)
         
 #define BELONGS_TO_CATEGORY_WHITESPACE(toktype) (toktype==TOKEN_WHITESPACE)
         
@@ -106,12 +108,16 @@ typedef struct _token_t{
 }token_t;
 class tokenstream_t{
     public:
-        tokenstream_t(std::vector<token_t> tokens):tokens(tokens),ptrs(1, 0){}
+        tokenstream_t(std::vector<token_t> tokens):ptrs(1, 0){
+            for(auto &tok:tokens){
+                this->tokens.push_back(std::make_unique<token_t>(tok));
+            }
+        }
         token_t *peek(){
             if(ptrs.back()>=tokens.size()){
                 return NULL;
             }
-            return &tokens[ptrs.back()];
+            return tokens[ptrs.back()].get();
         }
         void next(){
             assert(ptrs.size()>0);
@@ -134,13 +140,17 @@ class tokenstream_t{
             if(ptrs.back()>=tokens.size()){
                 return NULL;
             }
-            token_t *token=&tokens[ptrs.back()++];
+            token_t *token=tokens[ptrs.back()++].get();
             return token;
         }
         bool eof(){
             return ptrs.back()>=tokens.size();
         }
     private:
-        std::vector<token_t> tokens;
+        std::vector<std::unique_ptr<token_t>> tokens;
         std::vector<long> ptrs;
 };
+typedef struct{
+    bool success;
+    tokenstream_t tokenstream;
+}lexer_result_t;
