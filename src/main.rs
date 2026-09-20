@@ -74,7 +74,7 @@ struct Args{
     template_dir:String,
     #[arg(short,long,default_value_t=String::from("."))]
     output_dir:String,
-    #[arg(short,long,default_value_t=String::from("."))]
+    #[arg(short,long,default_value_t=String::from("rule"))]
     rules_dir:String,
 }
 pub struct Envs{
